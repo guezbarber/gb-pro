@@ -9,51 +9,15 @@ import {
 } from "lucide-react";
 
 const FEATURES = [
-  {
-    icon: Calendar,
-    title: "Agenda inteligente",
-    desc: "Tus clientes reservan solos con tu enlace. Tú solo apareces y cortas. Sin llamadas, sin mensajes."
-  },
-  {
-    icon: Users,
-    title: "CRM de clientes",
-    desc: "Guarda el historial, notas y preferencias de cada cliente. Construye relaciones que duran."
-  },
-  {
-    icon: MessageSquare,
-    title: "Marketing por WhatsApp",
-    desc: "Reactiva clientes que no vienen. Envía campañas masivas en segundos directamente a sus celulares."
-  },
-  {
-    icon: BarChart2,
-    title: "Finanzas en tiempo real",
-    desc: "Ve cuánto ganaste hoy, esta semana, este mes. Toma decisiones con datos reales."
-  },
-  {
-    icon: Map,
-    title: "Mapa VIP",
-    desc: "Aparece en el mapa donde los clientes buscan barberos. Más visibilidad, más clientes nuevos."
-  },
-  {
-    icon: Star,
-    title: "Sistema de fidelidad",
-    desc: "Puntos automáticos por cada visita. Tus mejores clientes se quedan y vuelven siempre."
-  },
-  {
-    icon: ShoppingBag,
-    title: "Tienda Online",
-    desc: "Vende tus productos físicos — pomadas, aceites, ceras — directamente desde la app."
-  },
-  {
-    icon: Users2,
-    title: "Gestión de equipo",
-    desc: "Administra múltiples barberos desde un solo panel. Cada uno con su propio acceso."
-  },
-  {
-    icon: Bell,
-    title: "Reservas automáticas 24/7",
-    desc: "Tu agenda nunca duerme. Los clientes reservan a cualquier hora."
-  },
+  { icon: Calendar, title: "Agenda inteligente", desc: "Tus clientes reservan solos con tu enlace. Tú solo apareces y cortas. Sin llamadas, sin mensajes." },
+  { icon: Users, title: "CRM de clientes", desc: "Guarda el historial, notas y preferencias de cada cliente. Construye relaciones que duran." },
+  { icon: MessageSquare, title: "Marketing por WhatsApp", desc: "Reactiva clientes que no vienen. Envía campañas masivas en segundos directamente a sus celulares." },
+  { icon: BarChart2, title: "Finanzas en tiempo real", desc: "Ve cuánto ganaste hoy, esta semana, este mes. Toma decisiones con datos reales." },
+  { icon: Map, title: "Mapa VIP", desc: "Aparece en el mapa donde los clientes buscan barberos. Más visibilidad, más clientes nuevos." },
+  { icon: Star, title: "Sistema de fidelidad", desc: "Puntos automáticos por cada visita. Tus mejores clientes se quedan y vuelven siempre." },
+  { icon: ShoppingBag, title: "Tienda Online", desc: "Vende tus productos físicos — pomadas, aceites, ceras — directamente desde la app." },
+  { icon: Users2, title: "Gestión de equipo", desc: "Administra múltiples barberos desde un solo panel. Cada uno con su propio acceso." },
+  { icon: Bell, title: "Reservas automáticas 24/7", desc: "Tu agenda nunca duerme. Los clientes reservan a cualquier hora." },
 ];
 
 const PLANES = [
@@ -63,12 +27,7 @@ const PLANES = [
     precio: "$0",
     periodo: "/mes",
     descripcion: "Para probar y arrancar.",
-    features: [
-      "Agenda digital",
-      "Enlace de reservas",
-      "Hasta 50 turnos por mes",
-      "CRM básico de clientes",
-    ],
+    features: ["Agenda digital", "Enlace de reservas", "Hasta 50 turnos por mes", "CRM básico de clientes"],
     cta: "Empezar gratis",
     href: "/register",
     destacado: false,
@@ -79,16 +38,7 @@ const PLANES = [
     precio: "$12.99",
     periodo: "USD/mes",
     descripcion: "Para el barbero independiente.",
-    features: [
-      "Turnos ilimitados sin comisiones",
-      "Recordatorios automáticos",
-      "CRM completo con historial",
-      "Reportes financieros",
-      "Marketing masivo por WhatsApp",
-      "Mapa VIP",
-      "Sistema de puntos y fidelidad",
-      "Tienda Online",
-    ],
+    features: ["Turnos ilimitados sin comisiones", "Recordatorios automáticos", "CRM completo con historial", "Reportes financieros", "Marketing masivo por WhatsApp", "Mapa VIP", "Sistema de puntos y fidelidad", "Tienda Online"],
     cta: "Activar PRO",
     href: "/register",
     destacado: true,
@@ -100,15 +50,7 @@ const PLANES = [
     precio: "$24.99",
     periodo: "USD/mes",
     descripcion: "Para barberías con equipo.",
-    features: [
-      "Todo lo del plan PRO",
-      "Hasta 5 barberos",
-      "Dashboard del equipo",
-      "Estadísticas por barbero",
-      "Acceso de empleados gratis",
-      "Selector de barbero en reservas",
-      "Control total del negocio",
-    ],
+    features: ["Todo lo del plan PRO", "Hasta 5 barberos", "Dashboard del equipo", "Estadísticas por barbero", "Acceso de empleados gratis", "Selector de barbero en reservas", "Control total del negocio"],
     cta: "Activar BOSS",
     href: "/register",
     destacado: false,
@@ -128,7 +70,7 @@ export default function HomePage() {
 
         <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none max-w-4xl">
           Gestiona tu barbería.<br />
-          <span className="text-zinc-400">Sin complicaciones.</span>
+          <span className="text-zinc-400">Orden. Libertad. Progreso.</span>
         </h1>
 
         <p className="text-zinc-400 text-lg md:text-xl max-w-xl font-medium">
@@ -142,7 +84,7 @@ export default function HomePage() {
             </Button>
           </Link>
           <Link href="/mapa">
-            <Button variant="outline" className="h-14 px-10 text-lg font-bold border-white/20 text-white hover:bg-white/10">
+            <Button className="h-14 px-10 text-lg font-bold bg-transparent border border-white/30 text-white hover:bg-white/10">
               Ver barberías del mapa
             </Button>
           </Link>
@@ -177,7 +119,6 @@ export default function HomePage() {
               Construido para barberos reales que quieren enfocarse en cortar, no en administrar.
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => {
               const Icon = f.icon;
@@ -204,40 +145,22 @@ export default function HomePage() {
             <h2 className="text-4xl font-black tracking-tight">Precios simples y honestos</h2>
             <p className="text-muted-foreground text-lg">Sin comisiones por turno. Sin sorpresas.</p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {PLANES.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative rounded-2xl border p-8 flex flex-col gap-6 ${
-                  plan.destacado
-                    ? "bg-zinc-950 text-white border-zinc-800 shadow-2xl"
-                    : "bg-white border-border/50 shadow-sm"
-                }`}
-              >
+              <div key={plan.id} className={`relative rounded-2xl border p-8 flex flex-col gap-6 ${plan.destacado ? "bg-zinc-950 text-white border-zinc-800 shadow-2xl" : "bg-white border-border/50 shadow-sm"}`}>
                 {plan.badge && (
                   <div className="absolute -top-4 inset-x-0 flex justify-center">
-                    <span className="bg-white text-black text-xs font-black tracking-widest uppercase py-1.5 px-6 rounded-full shadow border border-border/50">
-                      {plan.badge}
-                    </span>
+                    <span className="bg-white text-black text-xs font-black tracking-widest uppercase py-1.5 px-6 rounded-full shadow border border-border/50">{plan.badge}</span>
                   </div>
                 )}
-
                 <div className={plan.badge ? "pt-4" : ""}>
-                  <p className={`text-xs font-black uppercase tracking-widest mb-2 ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>
-                    {plan.nombre}
-                  </p>
+                  <p className={`text-xs font-black uppercase tracking-widest mb-2 ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>{plan.nombre}</p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black">{plan.precio}</span>
-                    <span className={`text-sm ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>
-                      {plan.periodo}
-                    </span>
+                    <span className={`text-sm ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>{plan.periodo}</span>
                   </div>
-                  <p className={`text-sm mt-1 ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>
-                    {plan.descripcion}
-                  </p>
+                  <p className={`text-sm mt-1 ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>{plan.descripcion}</p>
                 </div>
-
                 <ul className="space-y-2.5 flex-1">
                   {plan.features.map((item, i) => (
                     <li key={i} className={`flex items-center gap-2.5 text-sm ${plan.destacado ? "text-zinc-300" : "text-muted-foreground"}`}>
@@ -246,29 +169,17 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-
                 <Link href={plan.href}>
-                  <Button
-                    className={`w-full h-12 font-bold ${
-                      plan.destacado
-                        ? "bg-white text-black hover:bg-zinc-200"
-                        : ""
-                    }`}
-                    variant={plan.destacado ? "default" : "outline"}
-                  >
+                  <Button className={`w-full h-12 font-bold ${plan.destacado ? "bg-white text-black hover:bg-zinc-200" : "bg-transparent border border-border text-foreground hover:bg-muted"}`}>
                     {plan.cta}
                   </Button>
                 </Link>
               </div>
             ))}
           </div>
-
-          {/* Nota descuentos */}
           <div className="text-center p-4 bg-white rounded-xl border border-border/50 max-w-md mx-auto">
             <p className="text-sm font-bold">¿Tienes un código de descuento?</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ingrésalo al momento de pagar en MercadoPago.
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Ingrésalo al momento de pagar en MercadoPago.</p>
           </div>
         </div>
       </section>
