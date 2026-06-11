@@ -3,15 +3,10 @@
 import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabase";
 
-function getHoyStr() {
-  const hoy = new Date();
-  return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,"0")}-${String(hoy.getDate()).padStart(2,"0")}`;
-}
-
 export default function KioscoPage({ params }) {
   const { id: barberId } = use(params);
 
-  const [paso, setPaso] = useState(1); // 1=servicio, 2=nombre, 3=confirmado
+  const [paso, setPaso] = useState(1);
   const [config, setConfig] = useState(null);
   const [servicios, setServicios] = useState([]);
   const [servicioElegido, setServicioElegido] = useState(null);
@@ -20,7 +15,6 @@ export default function KioscoPage({ params }) {
   const [guardando, setGuardando] = useState(false);
   const [errorCarga, setErrorCarga] = useState(null);
 
-  // Auto-reset a pantalla inicial después de 12 segundos en paso 3
   useEffect(() => {
     if (paso === 3) {
       const timer = setTimeout(() => {
@@ -44,10 +38,7 @@ export default function KioscoPage({ params }) {
       .eq("barber_id", barberId)
       .single();
 
-    if (error || !cfg) {
-      setErrorCarga("No se encontró esta barbería.");
-      return;
-    }
+    if (error || !cfg) { setErrorCarga("No se encontró esta barbería."); return; }
     setConfig(cfg);
 
     const { data: svcs } = await supabase
@@ -59,7 +50,6 @@ export default function KioscoPage({ params }) {
   };
 
   const calcularTiempoEspera = async () => {
-    // Contar turnos pendientes desde ahora
     const ahora = new Date();
     const finDia = new Date();
     finDia.setHours(23, 59, 59, 999);
@@ -73,25 +63,17 @@ export default function KioscoPage({ params }) {
       .lte("start_time", finDia.toISOString());
 
     if (!turnosPendientes || turnosPendientes.length === 0) return 0;
-
-    const totalMinutos = turnosPendientes.reduce(
-      (sum, t) => sum + (t.services?.duration_minutes || 30),
-      0
-    );
-    return totalMinutos;
+    return turnosPendientes.reduce((sum, t) => sum + (t.services?.duration_minutes || 30), 0);
   };
 
   const confirmarWalkIn = async () => {
     if (!nombre.trim() || !servicioElegido) return;
     setGuardando(true);
 
-    // Calcular tiempo de espera antes de insertar
     const espera = await calcularTiempoEspera();
     setTiempoEspera(espera);
 
-    // Insertar como turno ahora mismo
     const ahora = new Date();
-    // Si hay espera, el turno empieza al final de la cola
     const startTime = new Date(ahora.getTime() + espera * 60000).toISOString();
 
     const { error } = await supabase.from("appointments").insert([{
@@ -103,11 +85,8 @@ export default function KioscoPage({ params }) {
       status: "pendiente",
     }]);
 
-    if (!error) {
-      setPaso(3);
-    } else {
-      alert("Error al registrar: " + error.message);
-    }
+    if (!error) setPaso(3);
+    else alert("Error al registrar: " + error.message);
     setGuardando(false);
   };
 
@@ -123,9 +102,7 @@ export default function KioscoPage({ params }) {
     </div>
   );
 
-  const nombreBarberia = config.plan === "PRO" || config.plan === "BOSS"
-    ? config.barber_name
-    : "GB PRO";
+  const nombreBarberia = config.plan === "PRO" || config.plan === "BOSS" ? config.barber_name : "GB PRO";
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col select-none">
@@ -142,17 +119,16 @@ export default function KioscoPage({ params }) {
         </div>
       </div>
 
-      {/* Contenido principal */}
+      {/* Contenido */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
 
-        {/* PASO 1 — Elegir servicio */}
+        {/* PASO 1 — Servicio */}
         {paso === 1 && (
           <div className="w-full max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div className="text-center">
               <h2 className="text-4xl font-black text-white tracking-tight">¿Qué servicio quieres?</h2>
               <p className="text-zinc-400 mt-2 text-lg">Toca para seleccionar</p>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {servicios.map((svc) => (
                 <button
@@ -160,17 +136,11 @@ export default function KioscoPage({ params }) {
                   onClick={() => { setServicioElegido(svc); setPaso(2); }}
                   className="group flex flex-col items-start p-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white hover:border-white transition-all active:scale-[0.97] text-left"
                 >
-                  <p className="font-black text-2xl text-white group-hover:text-zinc-950 transition-colors">
-                    {svc.name}
-                  </p>
+                  <p className="font-black text-2xl text-white group-hover:text-zinc-950 transition-colors">{svc.name}</p>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className="text-zinc-400 group-hover:text-zinc-600 text-sm transition-colors">
-                      {svc.duration_minutes} min
-                    </span>
+                    <span className="text-zinc-400 group-hover:text-zinc-600 text-sm transition-colors">{svc.duration_minutes} min</span>
                     <span className="text-zinc-600">·</span>
-                    <span className="font-black text-xl text-white group-hover:text-zinc-950 transition-colors">
-                      ${svc.price}
-                    </span>
+                    <span className="font-black text-xl text-white group-hover:text-zinc-950 transition-colors">${svc.price}</span>
                   </div>
                 </button>
               ))}
@@ -185,8 +155,6 @@ export default function KioscoPage({ params }) {
               <h2 className="text-4xl font-black text-white tracking-tight">¿Cómo te llamas?</h2>
               <p className="text-zinc-400 mt-2 text-lg">Escribe tu nombre para registrarte</p>
             </div>
-
-            {/* Resumen del servicio elegido */}
             <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
               <div>
                 <p className="text-white font-bold">{servicioElegido?.name}</p>
@@ -194,8 +162,6 @@ export default function KioscoPage({ params }) {
               </div>
               <p className="text-white font-black text-xl">${servicioElegido?.price}</p>
             </div>
-
-            {/* Input de nombre — grande para tablet */}
             <input
               type="text"
               placeholder="Tu nombre..."
@@ -205,7 +171,6 @@ export default function KioscoPage({ params }) {
               onChange={(e) => setNombre(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && nombre.trim()) confirmarWalkIn(); }}
             />
-
             <div className="flex gap-4">
               <button
                 onClick={() => { setPaso(1); setServicioElegido(null); setNombre(""); }}
@@ -227,21 +192,15 @@ export default function KioscoPage({ params }) {
         {/* PASO 3 — Confirmado */}
         {paso === 3 && (
           <div className="w-full max-w-lg text-center space-y-8 animate-in zoom-in-95">
-            {/* Check */}
             <div className="w-24 h-24 mx-auto bg-white rounded-full flex items-center justify-center">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#18181b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
-
             <div>
               <h2 className="text-5xl font-black text-white tracking-tight">¡Listo, {nombre.trim()}!</h2>
-              <p className="text-zinc-400 mt-3 text-xl">
-                {servicioElegido?.name} — ${servicioElegido?.price}
-              </p>
+              <p className="text-zinc-400 mt-3 text-xl">{servicioElegido?.name} — ${servicioElegido?.price}</p>
             </div>
-
-            {/* Tiempo de espera */}
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
               {tiempoEspera === 0 ? (
                 <>
@@ -256,21 +215,16 @@ export default function KioscoPage({ params }) {
                 </>
               )}
             </div>
-
-            {/* Barra de progreso para el auto-reset */}
             <div className="space-y-2">
               <p className="text-zinc-600 text-sm">Esta pantalla se reinicia automáticamente</p>
               <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-1 bg-white/40 rounded-full animate-[shrink_12s_linear_forwards]"
-                  style={{ animationName: "shrink", width: "100%" }} />
+                <div className="h-1 bg-white/40 rounded-full" style={{ animation: "shrink 12s linear forwards", width: "100%" }} />
               </div>
             </div>
           </div>
         )}
-
       </div>
 
-      {/* CSS para la animación de la barra */}
       <style jsx>{`
         @keyframes shrink {
           from { width: 100%; }
