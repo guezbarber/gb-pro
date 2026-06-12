@@ -83,8 +83,6 @@ const PLANES = [
 export default function SuscripcionPage() {
   const [planActual, setPlanActual] = useState("basico");
   const [loading, setLoading] = useState(null);
-
-  // Descuentos
   const [codigo, setCodigo] = useState("");
   const [codigoAplicado, setCodigoAplicado] = useState(null);
   const [errorCodigo, setErrorCodigo] = useState("");
@@ -93,12 +91,23 @@ export default function SuscripcionPage() {
     const cargarPlan = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
+
+      // Buscar en barber_settings
+      const { data: settings } = await supabase
         .from("barber_settings")
         .select("plan")
         .eq("barber_id", user.id)
         .single();
-      if (data?.plan) setPlanActual(data.plan.toLowerCase());
+
+      // Buscar también en barbershops por si acaso
+      const { data: bshop } = await supabase
+        .from("barbershops")
+        .select("plan")
+        .eq("owner_id", user.id)
+        .single();
+
+      const plan = settings?.plan || bshop?.plan || "basico";
+      setPlanActual(plan.toLowerCase());
     };
     cargarPlan();
   }, []);
@@ -116,18 +125,9 @@ export default function SuscripcionPage() {
 
   const handleSubscribe = (plan) => {
     if (plan.ctaDisabled) return;
-
-    // Si hay código aplicado y el plan es PRO, usar URL del descuento
     let url = plan.mpUrl;
-    if (codigoAplicado && plan.id === codigoAplicado.plan) {
-      url = codigoAplicado.url;
-    }
-
-    if (!url) {
-      alert("Este plan estará disponible muy pronto.");
-      return;
-    }
-
+    if (codigoAplicado && plan.id === codigoAplicado.plan) url = codigoAplicado.url;
+    if (!url) { alert("Este plan estará disponible muy pronto."); return; }
     setLoading(plan.id);
     window.location.href = url;
   };
@@ -137,13 +137,12 @@ export default function SuscripcionPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
 
-      {/* Header */}
       <div className="space-y-1">
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Planes</h1>
         <p className="text-muted-foreground">Sin comisiones. Sin sorpresas. Cancela cuando quieras.</p>
       </div>
 
-      {/* Plan actual activo */}
+      {/* Plan activo */}
       {planActual !== "basico" && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
           <Check size={16} className="text-green-600 shrink-0" />
@@ -153,7 +152,7 @@ export default function SuscripcionPage() {
         </div>
       )}
 
-      {/* ✅ Campo de código de descuento */}
+      {/* Código de descuento */}
       <div className="p-5 rounded-xl border border-border/50 bg-muted/20 space-y-3">
         <div className="flex items-center gap-2">
           <Tag size={15} strokeWidth={1.8} className="text-muted-foreground" />
@@ -161,7 +160,7 @@ export default function SuscripcionPage() {
         </div>
         <div className="flex gap-2">
           <Input
-            placeholder="Ej: AMIGO"
+            placeholder="Ingresa tu código"
             className="h-11 text-base bg-background uppercase tracking-widest font-bold max-w-xs"
             value={codigo}
             onChange={(e) => {
@@ -171,29 +170,22 @@ export default function SuscripcionPage() {
             }}
             onKeyDown={(e) => { if (e.key === "Enter") aplicarCodigo(); }}
           />
-          <Button
-            variant="outline"
-            className="h-11 font-bold px-6"
-            onClick={aplicarCodigo}
-            disabled={!codigo.trim()}
-          >
+          <Button variant="outline" className="h-11 font-bold px-6" onClick={aplicarCodigo} disabled={!codigo.trim()}>
             Aplicar
           </Button>
         </div>
-        {errorCodigo && (
-          <p className="text-sm text-red-500 font-medium">{errorCodigo}</p>
-        )}
+        {errorCodigo && <p className="text-sm text-red-500 font-medium">{errorCodigo}</p>}
         {codigoAplicado && (
           <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
             <Check size={14} className="text-green-600 shrink-0" />
             <p className="text-sm font-bold text-green-800">
-              Código <span className="uppercase">{codigoAplicado.codigo}</span> aplicado — {codigoAplicado.descuento} en el plan PRO
+              Código aplicado — {codigoAplicado.descuento} en el plan PRO
             </p>
           </div>
         )}
       </div>
 
-      {/* Cards de planes */}
+      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {PLANES.map((plan) => (
           <div
@@ -206,7 +198,6 @@ export default function SuscripcionPage() {
                   : "bg-background border-border/50"
             }`}
           >
-            {/* Nombre y precio */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <p className={`text-xs font-black uppercase tracking-widest ${plan.destacado ? "text-zinc-400" : "text-muted-foreground"}`}>
@@ -215,7 +206,6 @@ export default function SuscripcionPage() {
                 {esActual(plan.id) && plan.id !== "basico" && (
                   <span className="text-[10px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">Actual</span>
                 )}
-                {/* Badge de descuento si aplica */}
                 {codigoAplicado && plan.id === codigoAplicado.plan && (
                   <span className="text-[10px] font-black bg-green-600 text-white px-2 py-0.5 rounded-full">
                     {codigoAplicado.descuento}
@@ -223,12 +213,11 @@ export default function SuscripcionPage() {
                 )}
               </div>
               <div className="flex items-baseline gap-1">
-                {/* Precio tachado si hay descuento */}
                 {codigoAplicado && plan.id === codigoAplicado.plan ? (
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-black line-through opacity-40">{plan.precio}</span>
                     <span className="text-3xl font-black text-green-400">
-                      {codigoAplicado.descuento === "100% gratis" ? "Gratis" : `${plan.precio.replace("$", "$")} → 50% off`}
+                      {codigoAplicado.descuento === "100% gratis" ? "Gratis" : "50% off"}
                     </span>
                   </div>
                 ) : (
@@ -245,7 +234,6 @@ export default function SuscripcionPage() {
               </p>
             </div>
 
-            {/* Features */}
             <ul className="space-y-2 flex-1">
               {plan.features.map((f, i) => {
                 if (f.incluido === null) return <li key={i} className="h-5" />;
@@ -265,7 +253,6 @@ export default function SuscripcionPage() {
               })}
             </ul>
 
-            {/* CTA */}
             <Button
               className={`w-full h-11 font-bold ${
                 plan.destacado
@@ -285,7 +272,7 @@ export default function SuscripcionPage() {
                 : esActual(plan.id) && plan.id !== "basico"
                   ? "Plan activo"
                   : codigoAplicado && plan.id === codigoAplicado.plan
-                    ? `Activar con descuento`
+                    ? "Activar con descuento"
                     : plan.cta
               }
             </Button>
@@ -293,11 +280,8 @@ export default function SuscripcionPage() {
         ))}
       </div>
 
-      {/* Nota al pie */}
       <div className="space-y-1 text-center">
-        <p className="text-xs text-muted-foreground">
-          Pago seguro procesado por MercadoPago. Cancela cuando quieras.
-        </p>
+        <p className="text-xs text-muted-foreground">Pago seguro procesado por MercadoPago. Cancela cuando quieras.</p>
         <p className="text-xs text-muted-foreground">
           ¿Dudas? <a href="mailto:soporte@gbpro.app" className="font-bold hover:text-foreground transition-colors">soporte@gbpro.app</a>
         </p>
