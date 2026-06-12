@@ -30,7 +30,7 @@ export default function ResenasPage() {
   };
 
   const copiarEnlace = () => {
-    navigator.clipboard.writeText(`https://gb-pro-blue.vercel.app/resena/${barberId}`);
+    navigator.clipboard.writeText(`https://gbpro.app/resena/${barberId}`);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   };
@@ -67,7 +67,6 @@ export default function ResenasPage() {
         </Button>
       </div>
 
-      {/* Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-border/50 shadow-sm">
           <CardContent className="p-6 flex items-center gap-6">
@@ -110,7 +109,6 @@ export default function ResenasPage() {
         </div>
       </div>
 
-      {/* Lista */}
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold">Todas las reseñas</CardTitle>
@@ -142,10 +140,7 @@ export default function ResenasPage() {
                       {r.client_phone && <p className="text-xs text-muted-foreground mt-0.5">{r.client_phone}</p>}
                       {r.comentario && <p className="text-sm text-foreground mt-2 italic">"{r.comentario}"</p>}
                     </div>
-                    <button
-                      onClick={() => eliminarResena(r.id)}
-                      className="text-muted-foreground hover:text-red-500 transition-colors shrink-0 p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                    >
+                    <button onClick={() => eliminarResena(r.id)} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0 p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                       <X size={14} strokeWidth={2} />
                     </button>
                   </div>
