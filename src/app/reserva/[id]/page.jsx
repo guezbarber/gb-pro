@@ -22,19 +22,17 @@ export default function ReservaPublicaPage({ params }) {
   const [config, setConfig] = useState(null);
   const [servicios, setServicios] = useState([]);
   const [horasLibres, setHorasLibres] = useState([]);
-
   const [barberos, setBarberos] = useState([]);
   const [barberoElegido, setBarberoElegido] = useState(null);
   const [tieneEquipo, setTieneEquipo] = useState(false);
-
   const [servicioElegido, setServicioElegido] = useState(null);
   const [fechaElegida, setFechaElegida] = useState(getHoyStr());
   const [horaElegida, setHoraElegida] = useState("");
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
+  const [barberoEmail, setBarberoEmail] = useState("");
 
-  // ✅ Señas
   const [porcentajeSena, setPorcentajeSena] = useState(0);
   const [montoSena, setMontoSena] = useState(0);
   const [pagandoSena, setPagandoSena] = useState(false);
@@ -53,7 +51,6 @@ export default function ReservaPublicaPage({ params }) {
     }
   }, [fechaElegida, paso]);
 
-  // Recalcular monto de seña cuando cambia el servicio
   useEffect(() => {
     if (servicioElegido && porcentajeSena > 0) {
       setMontoSena(Math.round(servicioElegido.price * porcentajeSena / 100));
@@ -76,6 +73,17 @@ export default function ReservaPublicaPage({ params }) {
     setConfig(cfg);
     setPorcentajeSena(cfg.porcentaje_sena || 0);
 
+    // Obtener email del barbero
+    const { data: { user } } = await supabase.auth.admin ? 
+      { data: { user: null } } : { data: { user: null } };
+    
+    // Buscar email del dueño via auth
+    try {
+      const res = await fetch(`/api/barber-email?barber_id=${barberId}`);
+      const json = await res.json();
+      if (json.email) setBarberoEmail(json.email);
+    } catch {}
+
     const { data: svcs } = await supabase
       .from("services")
       .select("*")
@@ -90,7 +98,6 @@ export default function ReservaPublicaPage({ params }) {
       .single();
 
     if (bshop) {
-      // Usar el porcentaje de barbershops si está configurado ahí
       if (bshop.porcentaje_sena > 0) setPorcentajeSena(bshop.porcentaje_sena);
 
       const { data: equipo } = await supabase
@@ -189,7 +196,6 @@ export default function ReservaPublicaPage({ params }) {
     } catch {}
   };
 
-  // ✅ Confirmar reserva — con o sin seña
   const confirmarReserva = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -217,24 +223,40 @@ export default function ReservaPublicaPage({ params }) {
       return;
     }
 
-    // Sin seña — confirmar directo
+    const barberoNombre = config.barber_name || "GB PRO";
+    const fechaFormateada = new Date(`${fechaElegida}T${horaElegida}`).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
+
     if (!requiereSena) {
+      // Email de confirmación al cliente
       if (email) {
         await enviarEmail("confirmacion_turno", {
           clienteEmail: email,
           clienteNombre: nombre,
-          barberoNombre: config.barber_name || "GB PRO",
+          barberoNombre,
           servicio: servicioElegido.name,
-          fecha: fechaElegida,
+          fecha: fechaFormateada,
           hora: horaElegida,
         });
       }
+
+      // Email de notificación al barbero
+      if (barberoEmail) {
+        await enviarEmail("nuevo_turno_barbero", {
+          barberoEmail,
+          barberoNombre,
+          clienteNombre: nombre,
+          servicio: servicioElegido.name,
+          fecha: fechaFormateada,
+          hora: horaElegida,
+        });
+      }
+
       setLoading(false);
-      setPaso(6); // éxito sin seña
+      setPaso(6);
       return;
     }
 
-    // Con seña — crear preferencia de pago en MP
+    // Con seña — crear preferencia MP
     setPagandoSena(true);
     try {
       const res = await fetch("/api/mercadopago", {
@@ -256,10 +278,7 @@ export default function ReservaPublicaPage({ params }) {
       const data = await res.json();
 
       if (data.sandbox_init_point || data.init_point) {
-        // Redirigir a MercadoPago — en test usamos sandbox, en producción init_point
-        const urlPago = process.env.NODE_ENV === "production"
-          ? data.init_point
-          : data.sandbox_init_point;
+        const urlPago = process.env.NODE_ENV === "production" ? data.init_point : data.sandbox_init_point;
         window.location.href = urlPago;
       } else {
         alert("Error al generar el pago: " + (data.error || "Error desconocido"));
@@ -306,11 +325,8 @@ export default function ReservaPublicaPage({ params }) {
             </h1>
             <p className="text-zinc-400 mt-2 text-sm font-medium">Reserva de turno online</p>
             {(config.plan === 'PRO' || config.plan === 'BOSS') && config.instagram && (
-              <a
-                href={`https://instagram.com/${config.instagram.replace("@","")}`}
-                target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-4 py-2 rounded-full transition-all"
-              >
+              <a href={`https://instagram.com/${config.instagram.replace("@","")}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-4 bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-4 py-2 rounded-full transition-all">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                 @{config.instagram.replace("@","")}
               </a>
@@ -319,7 +335,6 @@ export default function ReservaPublicaPage({ params }) {
 
           <CardContent className="p-6 md:p-8">
 
-            {/* PASO 1: Elegir Barbero (solo si hay equipo) */}
             {paso === 1 && tieneEquipo && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                 <h2 className="text-xl font-bold mb-4">1. Elige tu barbero</h2>
@@ -339,7 +354,6 @@ export default function ReservaPublicaPage({ params }) {
               </div>
             )}
 
-            {/* PASO 1 sin equipo — directo a servicios */}
             {paso === 1 && !tieneEquipo && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                 <h2 className="text-xl font-bold mb-4">1. Elige tu servicio</h2>
@@ -358,7 +372,6 @@ export default function ReservaPublicaPage({ params }) {
               </div>
             )}
 
-            {/* PASO 2: Servicios con equipo */}
             {paso === 2 && tieneEquipo && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                 <div className="flex justify-between items-center mb-4">
@@ -386,30 +399,25 @@ export default function ReservaPublicaPage({ params }) {
               </div>
             )}
 
-            {/* PASO 3: Fecha y hora */}
             {paso === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-bold">{tieneEquipo ? "3." : "2."} ¿Cuándo vienes?</h2>
                   <button onClick={() => setPaso(tieneEquipo ? 2 : 1)} className="text-sm text-muted-foreground hover:text-foreground font-medium">Volver</button>
                 </div>
-
                 <div className="bg-muted/20 px-4 py-2 rounded-lg text-sm text-muted-foreground flex items-center gap-2">
                   <span><strong>{servicioElegido?.name}</strong> — {servicioElegido?.duration_minutes} min</span>
                 </div>
-
                 {barberoElegido && tieneEquipo && (
                   <div className="bg-muted/20 px-4 py-2 rounded-lg text-sm text-muted-foreground flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: barberoElegido.color || "#18181b" }} />
                     <span>Barbero: <strong className="text-foreground">{barberoElegido.name}</strong></span>
                   </div>
                 )}
-
                 <div className="space-y-2">
                   <Label className="text-base">Selecciona un día</Label>
                   <DatePickerIOS value={fechaElegida} minDate={getHoyStr()} onChange={(fecha) => setFechaElegida(fecha)} />
                 </div>
-
                 <div className="space-y-3 pt-2">
                   <Label className="text-base">Horarios disponibles</Label>
                   {cargandoHoras ? (
@@ -431,21 +439,18 @@ export default function ReservaPublicaPage({ params }) {
                     </div>
                   )}
                 </div>
-
                 <Button className="w-full h-14 text-lg font-bold mt-4 bg-zinc-950 hover:bg-zinc-800" disabled={!horaElegida} onClick={() => setPaso(4)}>
                   Continuar
                 </Button>
               </div>
             )}
 
-            {/* PASO 4: Datos del cliente */}
             {paso === 4 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-bold">{tieneEquipo ? "4." : "3."} Tus datos</h2>
                   <button onClick={() => setPaso(3)} className="text-sm text-muted-foreground hover:text-foreground font-medium">Volver</button>
                 </div>
-
                 <div className="bg-muted/20 p-5 rounded-xl border border-border/50 text-sm space-y-2">
                   {barberoElegido && tieneEquipo && (
                     <p className="flex justify-between"><span className="text-muted-foreground">Barbero:</span><span className="font-bold">{barberoElegido.name}</span></p>
@@ -462,7 +467,6 @@ export default function ReservaPublicaPage({ params }) {
                   <p className="flex justify-between"><span className="text-muted-foreground">Día:</span><span className="font-bold">{fechaElegida}</span></p>
                   <p className="flex justify-between"><span className="text-muted-foreground">Hora:</span><span className="font-bold">{horaElegida}</span></p>
                 </div>
-
                 <form onSubmit={confirmarReserva} className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <Label className="text-base">Tu Nombre</Label>
@@ -474,8 +478,11 @@ export default function ReservaPublicaPage({ params }) {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-base">
-                      Email {requiereSena && <span className="text-amber-600 text-sm font-bold">(requerido para el pago)</span>}
-                      {!requiereSena && <span className="text-muted-foreground text-sm font-normal">(opcional)</span>}
+                      Email{" "}
+                      {requiereSena
+                        ? <span className="text-amber-600 text-sm font-bold">(requerido para el pago)</span>
+                        : <span className="text-muted-foreground text-sm font-normal">(opcional — para recibir confirmación)</span>
+                      }
                     </Label>
                     <Input
                       type="email"
@@ -486,48 +493,29 @@ export default function ReservaPublicaPage({ params }) {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-14 text-lg font-bold mt-4 bg-zinc-950 hover:bg-zinc-800"
-                    disabled={loading || pagandoSena}
-                  >
-                    {pagandoSena
-                      ? "Redirigiendo a MercadoPago..."
-                      : loading
-                        ? "Confirmando..."
-                        : requiereSena
-                          ? `Pagar seña $${montoSena} y confirmar`
-                          : "Confirmar turno"
-                    }
+                  <Button type="submit" className="w-full h-14 text-lg font-bold mt-4 bg-zinc-950 hover:bg-zinc-800" disabled={loading || pagandoSena}>
+                    {pagandoSena ? "Redirigiendo a MercadoPago..." : loading ? "Confirmando..." : requiereSena ? `Pagar seña $${montoSena} y confirmar` : "Confirmar turno"}
                   </Button>
-
                   {requiereSena && (
-                    <p className="text-xs text-center text-muted-foreground">
-                      La seña de ${montoSena} se descuenta del total el día del turno.
-                    </p>
+                    <p className="text-xs text-center text-muted-foreground">La seña de ${montoSena} se descuenta del total el día del turno.</p>
                   )}
                 </form>
               </div>
             )}
 
-            {/* PASO 5: Pago de seña pendiente (vuelto de MP sin pagar) */}
             {paso === 5 && (
               <div className="text-center space-y-6 py-8 animate-in zoom-in-95">
-                <div className="text-5xl">⚠️</div>
+                <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">⚠️</span>
+                </div>
                 <div>
                   <h2 className="text-2xl font-extrabold">Pago pendiente</h2>
-                  <p className="text-muted-foreground mt-2 text-sm">
-                    Tu turno está reservado pero la seña no fue confirmada. Podés intentarlo de nuevo.
-                  </p>
+                  <p className="text-muted-foreground mt-2 text-sm">Tu turno está reservado pero la seña no fue confirmada.</p>
                 </div>
-                <Button className="w-full h-12 font-bold bg-zinc-950 hover:bg-zinc-800" onClick={() => setPaso(4)}>
-                  Reintentar pago
-                </Button>
+                <Button className="w-full h-12 font-bold bg-zinc-950 hover:bg-zinc-800" onClick={() => setPaso(4)}>Reintentar pago</Button>
               </div>
             )}
 
-            {/* PASO 6: Éxito */}
             {paso === 6 && (
               <div className="text-center space-y-6 py-8 animate-in zoom-in-95">
                 <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
@@ -537,17 +525,10 @@ export default function ReservaPublicaPage({ params }) {
                 </div>
                 <div>
                   <h2 className="text-3xl font-extrabold tracking-tight">Turno confirmado</h2>
-                  <p className="text-muted-foreground mt-2">
-                    Te esperamos el <strong>{fechaElegida}</strong> a las <strong>{horaElegida}</strong>.
-                  </p>
-                  {barberoElegido && tieneEquipo && (
-                    <p className="text-sm text-muted-foreground mt-1">Barbero: <strong>{barberoElegido.name}</strong></p>
-                  )}
-                  {email && (
-                    <p className="text-sm text-muted-foreground mt-2">Confirmación enviada a <strong>{email}</strong></p>
-                  )}
+                  <p className="text-muted-foreground mt-2">Te esperamos el <strong>{fechaElegida}</strong> a las <strong>{horaElegida}</strong>.</p>
+                  {barberoElegido && tieneEquipo && <p className="text-sm text-muted-foreground mt-1">Barbero: <strong>{barberoElegido.name}</strong></p>}
+                  {email && <p className="text-sm text-muted-foreground mt-2">Confirmación enviada a <strong>{email}</strong></p>}
                 </div>
-
                 <div className="flex flex-col gap-3 pt-4 max-w-xs mx-auto">
                   <a
                     href={`https://wa.me/${config.whatsapp_number}?text=¡Hola! Acabo de agendar un turno.%0A%0A✂️ *Servicio:* ${servicioElegido?.name}%0A📅 *Día:* ${fechaElegida}%0A⏰ *Hora:* ${horaElegida}%0A👤 *Nombre:* ${nombre}${barberoElegido && tieneEquipo ? `%0A💈 *Barbero:* ${barberoElegido.name}` : ""}`}
@@ -557,18 +538,13 @@ export default function ReservaPublicaPage({ params }) {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                     Avisar por WhatsApp
                   </a>
-
                   {(config.plan === 'PRO' || config.plan === 'BOSS') && config.instagram && (
-                    <a
-                      href={`https://instagram.com/${config.instagram.replace("@","")}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold h-14 rounded-xl shadow-md transition-all active:scale-[0.98]"
-                    >
+                    <a href={`https://instagram.com/${config.instagram.replace("@","")}`} target="_blank" rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold h-14 rounded-xl shadow-md transition-all active:scale-[0.98]">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                       Ver trabajos en Instagram
                     </a>
                   )}
-
                   <Button onClick={() => window.location.reload()} variant="ghost" className="w-full h-12 text-muted-foreground">
                     Hacer otra reserva
                   </Button>
@@ -585,7 +561,6 @@ export default function ReservaPublicaPage({ params }) {
           </div>
         </Card>
       </div>
-
       <div className="py-8"></div>
     </div>
   );
