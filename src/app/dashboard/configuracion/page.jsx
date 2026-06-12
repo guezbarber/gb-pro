@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2 } from "lucide-react";
+import { Check, Calendar, Link2, Users2 } from "lucide-react";
 
 export default function ConfiguracionPage() {
   const [barberName, setBarberName] = useState("");
@@ -26,21 +26,14 @@ export default function ConfiguracionPage() {
   const [calendarConectado, setCalendarConectado] = useState(false);
   const [conectandoCalendar, setConectandoCalendar] = useState(false);
 
-  useEffect(() => {
-    cargarConfiguracion();
-  }, []);
+  useEffect(() => { cargarConfiguracion(); }, []);
 
   const cargarConfiguracion = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setUserId(user.id);
 
-    const { data } = await supabase
-      .from('barber_settings')
-      .select('*')
-      .eq('barber_id', user.id)
-      .single();
-
+    const { data } = await supabase.from('barber_settings').select('*').eq('barber_id', user.id).single();
     if (data) {
       setBarberName(data.barber_name || "");
       setWhatsapp(data.whatsapp_number || "");
@@ -65,12 +58,7 @@ export default function ConfiguracionPage() {
     setSaving(true);
 
     const { data: { user } } = await supabase.auth.getUser();
-
-    const { data: existe } = await supabase
-      .from('barber_settings')
-      .select('id')
-      .eq('barber_id', user.id)
-      .single();
+    const { data: existe } = await supabase.from('barber_settings').select('id').eq('barber_id', user.id).single();
 
     const payload = {
       barber_name: barberName,
@@ -90,11 +78,7 @@ export default function ConfiguracionPage() {
       errorGuardado = error;
     }
 
-    // También actualizar barbershops si existe
-    await supabase
-      .from('barbershops')
-      .update({ porcentaje_sena: porcentajeSena })
-      .eq('owner_id', user.id);
+    await supabase.from('barbershops').update({ porcentaje_sena: porcentajeSena }).eq('owner_id', user.id);
 
     if (errorGuardado) {
       alert("Error al guardar: " + errorGuardado.message);
@@ -125,7 +109,7 @@ export default function ConfiguracionPage() {
   };
 
   const copiarEnlace = () => {
-    navigator.clipboard.writeText(`https://gb-pro-blue.vercel.app/reserva/${userId}`);
+    navigator.clipboard.writeText(`https://gbpro.app/reserva/${userId}`);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   };
@@ -156,7 +140,7 @@ export default function ConfiguracionPage() {
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
             <p className="text-sm font-mono text-muted-foreground truncate flex-1">
-              https://gb-pro-blue.vercel.app/reserva/{userId}
+              https://gbpro.app/reserva/{userId}
             </p>
             <Button variant="outline" size="sm" className="font-bold shrink-0" onClick={copiarEnlace}>
               {copiado ? "Copiado" : "Copiar"}
@@ -226,16 +210,14 @@ export default function ConfiguracionPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={guardarConfiguracion} className="space-y-6">
-
-            {/* Datos básicos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
               <div className="space-y-1.5">
-                <Label htmlFor="barberName">Nombre de la barbería</Label>
-                <Input id="barberName" required placeholder="Ej: Guez Barber" className="h-11 text-base" value={barberName} onChange={(e) => setBarberName(e.target.value)} />
+                <Label>Nombre de la barbería</Label>
+                <Input required placeholder="Ej: Guez Barber" className="h-11 text-base" value={barberName} onChange={(e) => setBarberName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="whatsapp">Número de WhatsApp</Label>
-                <Input id="whatsapp" required type="tel" placeholder="Ej: 099123456" className="h-11 text-base" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+                <Label>Número de WhatsApp</Label>
+                <Input required type="tel" placeholder="Ej: 099123456" className="h-11 text-base" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
               </div>
             </div>
 
@@ -247,10 +229,10 @@ export default function ConfiguracionPage() {
               </div>
               {senasActivas ? (
                 <div className="space-y-1.5">
-                  <Label htmlFor="instagram">Usuario de Instagram</Label>
+                  <Label>Usuario de Instagram</Label>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground font-bold">@</span>
-                    <Input id="instagram" placeholder="tuusuario" className="h-11 text-base" value={instagram.replace("@", "")} onChange={(e) => setInstagram(e.target.value.replace("@", ""))} />
+                    <Input placeholder="tuusuario" className="h-11 text-base" value={instagram.replace("@", "")} onChange={(e) => setInstagram(e.target.value.replace("@", ""))} />
                   </div>
                   <p className="text-xs text-muted-foreground">Aparece en tu página de reservas.</p>
                 </div>
@@ -269,26 +251,23 @@ export default function ConfiguracionPage() {
               <h3 className="font-bold text-sm mb-3">Horarios de atención</h3>
               <div className="grid grid-cols-2 gap-4 max-w-sm">
                 <div className="space-y-1.5">
-                  <Label htmlFor="openTime">Apertura</Label>
-                  <Input id="openTime" type="time" required className="h-11 text-base" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+                  <Label>Apertura</Label>
+                  <Input type="time" required className="h-11 text-base" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="closeTime">Cierre</Label>
-                  <Input id="closeTime" type="time" required className="h-11 text-base" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+                  <Label>Cierre</Label>
+                  <Input type="time" required className="h-11 text-base" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
                 </div>
               </div>
             </div>
 
-            {/* ✅ SEÑAS */}
+            {/* Señas */}
             <div className="border-t border-border/50 pt-5 max-w-2xl">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-sm">Señas (cobro anticipado)</h3>
                 {!senasActivas && <span className="text-xs bg-zinc-900 text-white px-2 py-0.5 rounded-full font-bold">PRO</span>}
               </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                El cliente paga un % al reservar online. Reduce los no-shows.
-              </p>
-
+              <p className="text-xs text-muted-foreground mb-3">El cliente paga un % al reservar online. Reduce los no-shows.</p>
               {senasActivas ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
@@ -298,36 +277,20 @@ export default function ConfiguracionPage() {
                         {porcentajeSena === 0 ? "Desactivadas — los clientes reservan sin pagar" : `El cliente paga el ${porcentajeSena}% al reservar`}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setPorcentajeSena(porcentajeSena === 0 ? 50 : 0)}
-                      className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${porcentajeSena > 0 ? "bg-zinc-950" : "bg-muted"}`}
-                    >
+                    <button type="button" onClick={() => setPorcentajeSena(porcentajeSena === 0 ? 50 : 0)} className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${porcentajeSena > 0 ? "bg-zinc-950" : "bg-muted"}`}>
                       <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${porcentajeSena > 0 ? "left-7" : "left-1"}`} />
                     </button>
                   </div>
-
                   {porcentajeSena > 0 && (
                     <div className="space-y-2">
                       <Label>Porcentaje de la seña</Label>
                       <div className="flex items-center gap-3">
-                        <input
-                          type="range"
-                          min={10}
-                          max={100}
-                          step={10}
-                          value={porcentajeSena}
-                          onChange={(e) => setPorcentajeSena(Number(e.target.value))}
-                          className="flex-1 h-2 accent-zinc-900"
-                        />
+                        <input type="range" min={10} max={100} step={10} value={porcentajeSena} onChange={(e) => setPorcentajeSena(Number(e.target.value))} className="flex-1 h-2 accent-zinc-900" />
                         <span className="font-black text-xl w-16 text-right">{porcentajeSena}%</span>
                       </div>
                       <div className="flex justify-between text-xs text-muted-foreground px-0.5">
                         {[10, 25, 50, 75, 100].map(v => (
-                          <button key={v} type="button" onClick={() => setPorcentajeSena(v)}
-                            className={`px-2 py-1 rounded font-bold transition-all ${porcentajeSena === v ? "bg-zinc-900 text-white" : "hover:bg-muted"}`}>
-                            {v}%
-                          </button>
+                          <button key={v} type="button" onClick={() => setPorcentajeSena(v)} className={`px-2 py-1 rounded font-bold transition-all ${porcentajeSena === v ? "bg-zinc-900 text-white" : "hover:bg-muted"}`}>{v}%</button>
                         ))}
                       </div>
                       <p className="text-xs text-muted-foreground pt-1">
@@ -346,17 +309,11 @@ export default function ConfiguracionPage() {
               )}
             </div>
 
-            {/* Guardar */}
             <div className="pt-4 border-t border-border/50">
-              <Button
-                type="submit"
-                className={`h-12 px-10 font-bold text-base transition-all ${guardado ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
-                disabled={saving}
-              >
+              <Button type="submit" className={`h-12 px-10 font-bold text-base transition-all ${guardado ? "bg-green-600 hover:bg-green-700 text-white" : ""}`} disabled={saving}>
                 {saving ? "Guardando..." : guardado ? "Guardado" : "Guardar cambios"}
               </Button>
             </div>
-
           </form>
         </CardContent>
       </Card>
