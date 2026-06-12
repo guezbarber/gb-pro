@@ -165,6 +165,11 @@ export default function ReservaPublicaPage({ params }) {
     let horaActual = new Date(`2000-01-01T${config.open_time}`);
     const horaCierre = new Date(`2000-01-01T${config.close_time}`);
 
+    // Si es hoy, bloquear horas que ya pasaron
+    const esHoy = fecha === getHoyStr();
+    const ahora = new Date();
+    const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
+
     while (horaActual < horaCierre) {
       const horaStr = `${String(horaActual.getHours()).padStart(2,"0")}:${String(horaActual.getMinutes()).padStart(2,"0")}`;
       let disponible = true;
@@ -175,6 +180,13 @@ export default function ReservaPublicaPage({ params }) {
       }
       const fin = new Date(horaActual.getTime() + duracionNuevo * 60000);
       if (fin > horaCierre) disponible = false;
+
+      // Si es hoy, bloquear horas que ya pasaron (con 30 min de margen)
+      if (esHoy) {
+        const minutosSlot = horaActual.getHours() * 60 + horaActual.getMinutes();
+        if (minutosSlot <= minutosAhora + 30) disponible = false;
+      }
+
       if (disponible) horariosCalculados.push(horaStr);
       horaActual.setMinutes(horaActual.getMinutes() + INTERVALO);
     }
