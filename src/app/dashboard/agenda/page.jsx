@@ -39,6 +39,8 @@ export default function AgendaPage() {
   const [clienteEncontrado, setClienteEncontrado] = useState(false);
   const [calendarConectado, setCalendarConectado] = useState(false);
   const [barberIdState, setBarberIdState] = useState(null);
+  const [barberoEmail, setBarberoEmail] = useState("");
+  const [barberoNombre, setBarberoNombre] = useState("");
   const busquedaTimeout = useRef(null);
 
   const [modalVenta, setModalVenta] = useState(false);
@@ -70,9 +72,13 @@ export default function AgendaPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setBarberIdState(user.id);
+    setBarberoEmail(user.email || "");
 
-    const { data: settings } = await supabase.from('barber_settings').select('plan').eq('barber_id', user.id).single();
-    if (settings) setPlan(settings.plan || "basico");
+    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name').eq('barber_id', user.id).single();
+    if (settings) {
+      setPlan(settings.plan || "basico");
+      setBarberoNombre(settings.barber_name || "");
+    }
 
     const { data: servicesData } = await supabase.from('services').select('*').eq('barber_id', user.id);
     if (servicesData) setServices(servicesData);
@@ -102,6 +108,16 @@ export default function AgendaPage() {
   const borrarEventoCalendar = async (appointment_id) => {
     if (!calendarConectado || !barberIdState) return;
     try { await fetch("/api/calendar", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ barber_id: barberIdState, appointment_id }) }); } catch { }
+  };
+
+  const enviarEmail = async (tipo, datos) => {
+    try {
+      await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, ...datos }),
+      });
+    } catch {}
   };
 
   const handlePhoneChange = (e) => {
@@ -192,10 +208,31 @@ export default function AgendaPage() {
 
   const handleDeleteAppointment = async (id) => {
     if (!window.confirm("¿Borrar este turno?")) return;
+
+    // Buscar datos del turno antes de borrarlo
+    const appt = appointments.find(a => a.id === id);
+
     await borrarEventoCalendar(id);
     const { error } = await supabase.from('appointments').delete().eq('id', id);
-    if (error) alert("Error: " + error.message);
-    else { setAppointments(appointments.filter(a => a.id !== id)); setTurnosMes(prev => Math.max(0, prev - 1)); }
+    if (error) { alert("Error: " + error.message); return; }
+
+    setAppointments(appointments.filter(a => a.id !== id));
+    setTurnosMes(prev => Math.max(0, prev - 1));
+
+    // ✅ Email de turno cancelado al barbero
+    if (barberoEmail && appt) {
+      const fecha = new Date(appt.start_time);
+      const fechaStr = fecha.toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
+      const horaStr = fecha.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+      await enviarEmail("turno_cancelado_barbero", {
+        barberoEmail,
+        barberoNombre,
+        clienteNombre: appt.client_name,
+        servicio: appt.services?.name || "Turno",
+        fecha: fechaStr,
+        hora: horaStr,
+      });
+    }
   };
 
   const guardarBloqueo = async () => {
