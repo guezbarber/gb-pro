@@ -32,6 +32,7 @@ export default function ReservaPublicaPage({ params }) {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [barberoEmail, setBarberoEmail] = useState("");
+  const [barbershopId, setBarbershopId] = useState(null); // ✅ FIX GEMINI
 
   const [porcentajeSena, setPorcentajeSena] = useState(0);
   const [montoSena, setMontoSena] = useState(0);
@@ -73,11 +74,6 @@ export default function ReservaPublicaPage({ params }) {
     setConfig(cfg);
     setPorcentajeSena(cfg.porcentaje_sena || 0);
 
-    // Obtener email del barbero
-    const { data: { user } } = await supabase.auth.admin ? 
-      { data: { user: null } } : { data: { user: null } };
-    
-    // Buscar email del dueño via auth
     try {
       const res = await fetch(`/api/barber-email?barber_id=${barberId}`);
       const json = await res.json();
@@ -98,6 +94,7 @@ export default function ReservaPublicaPage({ params }) {
       .single();
 
     if (bshop) {
+      setBarbershopId(bshop.id); // ✅ FIX GEMINI
       if (bshop.porcentaje_sena > 0) setPorcentajeSena(bshop.porcentaje_sena);
 
       const { data: equipo } = await supabase
@@ -206,6 +203,7 @@ export default function ReservaPublicaPage({ params }) {
 
     const { data: insertedData, error } = await supabase.from("appointments").insert([{
       barber_id: barberId,
+      barbershop_id: barbershopId, // ✅ FIX GEMINI
       service_id: servicioElegido.id,
       client_name: nombre,
       client_phone: telefono,
@@ -227,7 +225,6 @@ export default function ReservaPublicaPage({ params }) {
     const fechaFormateada = new Date(`${fechaElegida}T${horaElegida}`).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
 
     if (!requiereSena) {
-      // Email de confirmación al cliente
       if (email) {
         await enviarEmail("confirmacion_turno", {
           clienteEmail: email,
@@ -238,8 +235,6 @@ export default function ReservaPublicaPage({ params }) {
           hora: horaElegida,
         });
       }
-
-      // Email de notificación al barbero
       if (barberoEmail) {
         await enviarEmail("nuevo_turno_barbero", {
           barberoEmail,
@@ -250,13 +245,11 @@ export default function ReservaPublicaPage({ params }) {
           hora: horaElegida,
         });
       }
-
       setLoading(false);
       setPaso(6);
       return;
     }
 
-    // Con seña — crear preferencia MP
     setPagandoSena(true);
     try {
       const res = await fetch("/api/mercadopago", {
