@@ -41,6 +41,8 @@ export default function AgendaPage() {
   const [barberIdState, setBarberIdState] = useState(null);
   const [barberoEmail, setBarberoEmail] = useState("");
   const [barberoNombre, setBarberoNombre] = useState("");
+  const barberoEmailRef = useRef("");
+  const barberoNombreRef = useRef("");
   const busquedaTimeout = useRef(null);
 
   const [modalVenta, setModalVenta] = useState(false);
@@ -73,11 +75,13 @@ export default function AgendaPage() {
     if (!user) return;
     setBarberIdState(user.id);
     setBarberoEmail(user.email || "");
+    barberoEmailRef.current = user.email || "";
 
     const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name').eq('barber_id', user.id).single();
     if (settings) {
       setPlan(settings.plan || "basico");
       setBarberoNombre(settings.barber_name || "");
+      barberoNombreRef.current = settings.barber_name || "";
     }
 
     const { data: servicesData } = await supabase.from('services').select('*').eq('barber_id', user.id);
@@ -151,13 +155,15 @@ export default function AgendaPage() {
       setearHoraActual(); loadData();
       crearEventoCalendar(insertedData.id, clientName, servicioSeleccionado?.name || "Turno", startTime, servicioSeleccionado?.duration_minutes || 30);
 
-      // ✅ Email al barbero cuando agenda manualmente
-      if (barberoEmail) {
+      // ✅ Email al barbero — usa ref para garantizar que el valor esté disponible
+      const emailDestino = barberoEmailRef.current || user.email;
+      const nombreDestino = barberoNombreRef.current || "";
+      if (emailDestino) {
         const fechaFormateada = new Date(startTime).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
         const horaFormateada = new Date(startTime).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
         await enviarEmail("nuevo_turno_barbero", {
-          barberoEmail,
-          barberoNombre,
+          barberoEmail: emailDestino,
+          barberoNombre: nombreDestino,
           clienteNombre: clientName,
           servicio: servicioSeleccionado?.name || "Turno",
           fecha: fechaFormateada,
@@ -228,12 +234,14 @@ export default function AgendaPage() {
     if (error) { alert("Error: " + error.message); return; }
     setAppointments(appointments.filter(a => a.id !== id));
     setTurnosMes(prev => Math.max(0, prev - 1));
-    if (barberoEmail && appt) {
+    const emailDestino = barberoEmailRef.current || barberoEmail;
+    if (emailDestino && appt) {
       const fecha = new Date(appt.start_time);
       const fechaStr = fecha.toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
       const horaStr = fecha.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
       await enviarEmail("turno_cancelado_barbero", {
-        barberoEmail, barberoNombre,
+        barberoEmail: emailDestino,
+        barberoNombre: barberoNombreRef.current || barberoNombre,
         clienteNombre: appt.client_name,
         servicio: appt.services?.name || "Turno",
         fecha: fechaStr, hora: horaStr,
