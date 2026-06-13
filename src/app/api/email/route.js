@@ -20,23 +20,16 @@ export async function POST(request) {
     const body = await request.json();
     const {
       tipo,
-      // Cliente
       clienteEmail, clienteNombre,
-      // Barbero
       barberoEmail, barberoNombre,
-      // Turno
       servicio, fecha, hora, puntos,
-      // Resumen diario
       turnos,
+      totalTurnos, totalCompletados, totalFaltaron, totalIngresos,
     } = body;
 
     let subject = "";
     let html = "";
     let to = clienteEmail;
-
-    // ─────────────────────────────────────────
-    // EMAILS AL CLIENTE
-    // ─────────────────────────────────────────
 
     if (tipo === "confirmacion_turno") {
       subject = `Turno confirmado en ${barberoNombre}`;
@@ -128,10 +121,6 @@ export async function POST(request) {
       `;
     }
 
-    // ─────────────────────────────────────────
-    // EMAILS AL BARBERO
-    // ─────────────────────────────────────────
-
     if (tipo === "nuevo_turno_barbero") {
       to = barberoEmail;
       subject = `Nueva reserva — ${clienteNombre}`;
@@ -182,28 +171,26 @@ export async function POST(request) {
 
     if (tipo === "resumen_diario_barbero") {
       to = barberoEmail;
-      const totalTurnos = turnos?.length || 0;
-      const totalIngresos = turnos?.reduce((s, t) => s + (t.precio || 0), 0) || 0;
-      subject = `Tu agenda de hoy — ${totalTurnos} turno${totalTurnos !== 1 ? "s" : ""}`;
+      const totalT = turnos?.length || 0;
+      const totalI = turnos?.reduce((s, t) => s + (t.precio || 0), 0) || 0;
+      subject = `Tu agenda de hoy — ${totalT} turno${totalT !== 1 ? "s" : ""}`;
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff;">
           ${header}
           <div style="padding: 32px;">
             <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Tu agenda de hoy</h2>
             <p style="color: #71717a; margin-bottom: 24px;">Hola <strong>${barberoNombre}</strong>, aquí está tu resumen del día.</p>
-
             <div style="display: flex; gap: 12px; margin-bottom: 24px;">
               <div style="flex: 1; background: #09090b; color: white; border-radius: 12px; padding: 16px; text-align: center;">
                 <p style="font-size: 12px; color: #a1a1aa; margin: 0 0 4px 0;">TURNOS HOY</p>
-                <p style="font-size: 32px; font-weight: 900; margin: 0;">${totalTurnos}</p>
+                <p style="font-size: 32px; font-weight: 900; margin: 0;">${totalT}</p>
               </div>
               <div style="flex: 1; background: #f4f4f5; border-radius: 12px; padding: 16px; text-align: center;">
                 <p style="font-size: 12px; color: #71717a; margin: 0 0 4px 0;">INGRESOS EST.</p>
-                <p style="font-size: 32px; font-weight: 900; margin: 0;">$${totalIngresos}</p>
+                <p style="font-size: 32px; font-weight: 900; margin: 0;">$${totalI}</p>
               </div>
             </div>
-
-            ${totalTurnos > 0 ? `
+            ${totalT > 0 ? `
               <div style="background: #f4f4f5; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                 <p style="font-size: 13px; color: #71717a; font-weight: 700; margin: 0 0 12px 0;">DETALLE DE TURNOS</p>
                 ${turnos.map(t => `
@@ -221,8 +208,64 @@ export async function POST(request) {
                 <p style="color: #71717a; margin: 0;">No tienes turnos para hoy.</p>
               </div>
             `}
-
             <a href="https://gbpro.app/dashboard/agenda" style="display: block; background: #09090b; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 700; text-decoration: none;">Ver agenda completa</a>
+          </div>
+          ${footer}
+        </div>
+      `;
+    }
+
+    if (tipo === "resumen_cierre_barbero") {
+      to = barberoEmail;
+      subject = `Cierre del día — ${totalCompletados} cortes, $${totalIngresos} generados`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff;">
+          ${header}
+          <div style="padding: 32px;">
+            <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 4px;">Fin del día, ${barberoNombre}</h2>
+            <p style="color: #71717a; margin-bottom: 24px; font-size: 14px;">Dedica 5 minutos a revisar cómo te fue hoy.</p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+              <div style="flex: 1; background: #09090b; color: white; border-radius: 12px; padding: 16px; text-align: center;">
+                <p style="font-size: 11px; color: #a1a1aa; margin: 0 0 4px 0; text-transform: uppercase;">Completados</p>
+                <p style="font-size: 28px; font-weight: 900; margin: 0;">${totalCompletados}</p>
+              </div>
+              <div style="flex: 1; background: #f4f4f5; border-radius: 12px; padding: 16px; text-align: center;">
+                <p style="font-size: 11px; color: #71717a; margin: 0 0 4px 0; text-transform: uppercase;">Faltaron</p>
+                <p style="font-size: 28px; font-weight: 900; margin: 0;">${totalFaltaron}</p>
+              </div>
+              <div style="flex: 1; background: #f4f4f5; border-radius: 12px; padding: 16px; text-align: center;">
+                <p style="font-size: 11px; color: #71717a; margin: 0 0 4px 0; text-transform: uppercase;">Ingresos</p>
+                <p style="font-size: 24px; font-weight: 900; margin: 0;">$${totalIngresos}</p>
+              </div>
+            </div>
+
+            ${turnos && turnos.length > 0 ? `
+              <div style="background: #f4f4f5; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <p style="font-size: 12px; color: #71717a; font-weight: 700; margin: 0 0 12px 0; text-transform: uppercase;">Detalle del día</p>
+                ${turnos.map(t => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e4e4e7;">
+                    <div>
+                      <p style="margin: 0; font-weight: 700; font-size: 13px;">${t.cliente}</p>
+                      <p style="margin: 0; color: #71717a; font-size: 11px;">${t.servicio} · ${t.hora}</p>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: ${t.status === "completado" ? "#dcfce7" : t.status === "falto" ? "#fee2e2" : "#f4f4f5"}; color: ${t.status === "completado" ? "#16a34a" : t.status === "falto" ? "#dc2626" : "#71717a"};">
+                      ${t.status === "completado" ? "Completado" : t.status === "falto" ? "Faltó" : "Pendiente"}
+                    </span>
+                  </div>
+                `).join("")}
+              </div>
+            ` : ""}
+
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+              <p style="font-size: 13px; font-weight: 700; color: #92400e; margin: 0 0 4px 0;">Antes de cerrar</p>
+              <p style="font-size: 12px; color: #b45309; margin: 0;">¿Hiciste algún corte que no está anotado? Agrégalo a la agenda y a finanzas para que tus números queden correctos.</p>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <a href="https://gbpro.app/dashboard/agenda" style="flex: 1; display: block; background: #09090b; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px;">Ver agenda</a>
+              <a href="https://gbpro.app/dashboard/finanzas" style="flex: 1; display: block; background: #f4f4f5; color: #09090b; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 13px;">Ver finanzas</a>
+            </div>
           </div>
           ${footer}
         </div>

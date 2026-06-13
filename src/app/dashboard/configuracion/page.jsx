@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Users2 } from "lucide-react";
+import { Check, Calendar, Link2, Bell } from "lucide-react";
 
 export default function ConfiguracionPage() {
   const [barberName, setBarberName] = useState("");
@@ -15,6 +15,7 @@ export default function ConfiguracionPage() {
   const [closeTime, setCloseTime] = useState("");
   const [instagram, setInstagram] = useState("");
   const [porcentajeSena, setPorcentajeSena] = useState(0);
+  const [recordatorioCierre, setRecordatorioCierre] = useState(false);
   const [userId, setUserId] = useState(null);
   const [plan, setPlan] = useState("basico");
 
@@ -42,6 +43,7 @@ export default function ConfiguracionPage() {
       setInstagram(data.instagram || "");
       setPlan(data.plan || "basico");
       setPorcentajeSena(data.porcentaje_sena || 0);
+      setRecordatorioCierre(data.recordatorio_cierre || false);
     }
 
     try {
@@ -67,6 +69,7 @@ export default function ConfiguracionPage() {
       close_time: closeTime,
       instagram: plan === "PRO" || plan === "BOSS" ? instagram : null,
       porcentaje_sena: porcentajeSena,
+      recordatorio_cierre: recordatorioCierre,
     };
 
     let errorGuardado;
@@ -258,6 +261,36 @@ export default function ConfiguracionPage() {
                   <Label>Cierre</Label>
                   <Input type="time" required className="h-11 text-base" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
                 </div>
+              </div>
+            </div>
+
+            {/* Recordatorio de cierre */}
+            <div className="border-t border-border/50 pt-5 max-w-2xl">
+              <div className="flex items-center gap-2 mb-1">
+                <Bell size={14} strokeWidth={1.8} />
+                <h3 className="font-bold text-sm">Recordatorio de cierre</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">Te enviamos un email al cerrar con el resumen del día para que no te olvides de anotar nada.</p>
+              <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
+                <div>
+                  <p className="font-bold text-sm">
+                    {recordatorioCierre
+                      ? closeTime ? `Te llegará a las ${closeTime}` : "Activo — configura tu hora de cierre"
+                      : "Desactivado"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {recordatorioCierre
+                      ? "Resumen del día con turnos, ingresos y recordatorio de anotar lo que faltó."
+                      : "Actívalo para recibir el resumen al cerrar tu jornada."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRecordatorioCierre(!recordatorioCierre)}
+                  className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${recordatorioCierre ? "bg-zinc-950" : "bg-muted"}`}
+                >
+                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${recordatorioCierre ? "left-7" : "left-1"}`} />
+                </button>
               </div>
             </div>
 
