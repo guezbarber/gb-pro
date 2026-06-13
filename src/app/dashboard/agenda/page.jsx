@@ -150,6 +150,20 @@ export default function AgendaPage() {
       setClientName(""); setClientPhone(""); setServiceId(""); setClienteEncontrado(false);
       setearHoraActual(); loadData();
       crearEventoCalendar(insertedData.id, clientName, servicioSeleccionado?.name || "Turno", startTime, servicioSeleccionado?.duration_minutes || 30);
+
+      // ✅ Email al barbero cuando agenda manualmente
+      if (barberoEmail) {
+        const fechaFormateada = new Date(startTime).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
+        const horaFormateada = new Date(startTime).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+        await enviarEmail("nuevo_turno_barbero", {
+          barberoEmail,
+          barberoNombre,
+          clienteNombre: clientName,
+          servicio: servicioSeleccionado?.name || "Turno",
+          fecha: fechaFormateada,
+          hora: horaFormateada,
+        });
+      }
     } else if (error) { alert("Error al agendar: " + error.message); }
     setLoading(false);
   };
@@ -208,29 +222,21 @@ export default function AgendaPage() {
 
   const handleDeleteAppointment = async (id) => {
     if (!window.confirm("¿Borrar este turno?")) return;
-
-    // Buscar datos del turno antes de borrarlo
     const appt = appointments.find(a => a.id === id);
-
     await borrarEventoCalendar(id);
     const { error } = await supabase.from('appointments').delete().eq('id', id);
     if (error) { alert("Error: " + error.message); return; }
-
     setAppointments(appointments.filter(a => a.id !== id));
     setTurnosMes(prev => Math.max(0, prev - 1));
-
-    // ✅ Email de turno cancelado al barbero
     if (barberoEmail && appt) {
       const fecha = new Date(appt.start_time);
       const fechaStr = fecha.toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
       const horaStr = fecha.toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
       await enviarEmail("turno_cancelado_barbero", {
-        barberoEmail,
-        barberoNombre,
+        barberoEmail, barberoNombre,
         clienteNombre: appt.client_name,
         servicio: appt.services?.name || "Turno",
-        fecha: fechaStr,
-        hora: horaStr,
+        fecha: fechaStr, hora: horaStr,
       });
     }
   };
@@ -261,7 +267,6 @@ export default function AgendaPage() {
     <div className="max-w-5xl mx-auto space-y-6 relative pb-20 md:pb-0">
       <WelcomeModal />
 
-      {/* MODAL VENTA */}
       {modalVenta && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden">
@@ -293,7 +298,6 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* MODAL BLOQUEO */}
       {modalBloqueo && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden">
@@ -331,7 +335,6 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* MODAL EDITAR */}
       {modalEditar && turnoEditando && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden">
@@ -365,7 +368,6 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* Header */}
       <div>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Agenda</h1>
         {calendarConectado && (
@@ -376,7 +378,6 @@ export default function AgendaPage() {
         )}
       </div>
 
-      {/* Banner límite */}
       {plan === "basico" && (
         <div className={`flex items-center justify-between p-4 rounded-xl border ${limiteAlcanzado ? "bg-red-50 border-red-200" : turnosRestantes <= 10 ? "bg-amber-50 border-amber-200" : "bg-muted/20 border-border/50"}`}>
           <div>
@@ -400,7 +401,6 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* Stats + bloqueo */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <Card className="bg-zinc-900 border-none text-white">
           <CardContent className="p-4 md:p-5">
@@ -421,7 +421,6 @@ export default function AgendaPage() {
         </button>
       </div>
 
-      {/* Formulario + Lista */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border-border/50 shadow-sm h-fit">
           <CardHeader className="pb-3">
