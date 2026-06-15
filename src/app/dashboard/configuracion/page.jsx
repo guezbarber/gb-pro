@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Check, Calendar, Link2, Bell } from "lucide-react";
 
 export default function ConfiguracionPage() {
+  console.log("Engañando a Vercel...");
   const [barberName, setBarberName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [openTime, setOpenTime] = useState("");
