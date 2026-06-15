@@ -353,4 +353,4 @@ export default function ConfiguracionPage() {
       </Card>
     </div>
   );
-}
+}// Vercel, actualiza esto por favor
