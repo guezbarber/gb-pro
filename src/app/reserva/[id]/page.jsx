@@ -32,7 +32,7 @@ export default function ReservaPublicaPage({ params }) {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [barberoEmail, setBarberoEmail] = useState("");
-  const [barbershopId, setBarbershopId] = useState(null); // ✅ FIX GEMINI
+  const [barbershopId, setBarbershopId] = useState(null);
 
   const [porcentajeSena, setPorcentajeSena] = useState(0);
   const [montoSena, setMontoSena] = useState(0);
@@ -94,7 +94,7 @@ export default function ReservaPublicaPage({ params }) {
       .single();
 
     if (bshop) {
-      setBarbershopId(bshop.id); // ✅ FIX GEMINI
+      setBarbershopId(bshop.id);
       if (bshop.porcentaje_sena > 0) setPorcentajeSena(bshop.porcentaje_sena);
 
       const { data: equipo } = await supabase
@@ -165,7 +165,6 @@ export default function ReservaPublicaPage({ params }) {
     let horaActual = new Date(`2000-01-01T${config.open_time}`);
     const horaCierre = new Date(`2000-01-01T${config.close_time}`);
 
-    // Si es hoy, bloquear horas que ya pasaron
     const esHoy = fecha === getHoyStr();
     const ahora = new Date();
     const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
@@ -181,7 +180,6 @@ export default function ReservaPublicaPage({ params }) {
       const fin = new Date(horaActual.getTime() + duracionNuevo * 60000);
       if (fin > horaCierre) disponible = false;
 
-      // Si es hoy, bloquear horas que ya pasaron (con 30 min de margen)
       if (esHoy) {
         const minutosSlot = horaActual.getHours() * 60 + horaActual.getMinutes();
         if (minutosSlot <= minutosAhora + 30) disponible = false;
@@ -205,6 +203,21 @@ export default function ReservaPublicaPage({ params }) {
     } catch {}
   };
 
+  const enviarPush = async (titulo, cuerpo) => {
+    try {
+      await fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barber_id: barberId,
+          title: titulo,
+          body: cuerpo,
+          url: "/dashboard/agenda",
+        }),
+      });
+    } catch {}
+  };
+
   const confirmarReserva = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -215,7 +228,7 @@ export default function ReservaPublicaPage({ params }) {
 
     const { data: insertedData, error } = await supabase.from("appointments").insert([{
       barber_id: barberId,
-      barbershop_id: barbershopId, // ✅ FIX GEMINI
+      barbershop_id: barbershopId,
       service_id: servicioElegido.id,
       client_name: nombre,
       client_phone: telefono,
@@ -257,6 +270,13 @@ export default function ReservaPublicaPage({ params }) {
           hora: horaElegida,
         });
       }
+
+      // Notificación push al barbero
+      await enviarPush(
+        `Nueva reserva — ${nombre}`,
+        `${servicioElegido.name} el ${fechaElegida} a las ${horaElegida}`
+      );
+
       setLoading(false);
       setPaso(6);
       return;

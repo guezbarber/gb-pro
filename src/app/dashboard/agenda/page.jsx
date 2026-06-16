@@ -41,8 +41,13 @@ export default function AgendaPage() {
   const [barberIdState, setBarberIdState] = useState(null);
   const [barberoEmail, setBarberoEmail] = useState("");
   const [barberoNombre, setBarberoNombre] = useState("");
+  const [notifEmail, setNotifEmail] = useState(true);
+  const [notifPush, setNotifPush] = useState(true);
   const barberoEmailRef = useRef("");
   const barberoNombreRef = useRef("");
+  const barberIdRef = useRef("");
+  const notifEmailRef = useRef(true);
+  const notifPushRef = useRef(true);
   const busquedaTimeout = useRef(null);
 
   const [modalVenta, setModalVenta] = useState(false);
@@ -74,14 +79,19 @@ export default function AgendaPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setBarberIdState(user.id);
+    barberIdRef.current = user.id;
     setBarberoEmail(user.email || "");
     barberoEmailRef.current = user.email || "";
 
-    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name').eq('barber_id', user.id).single();
+    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name, notif_email, notif_push').eq('barber_id', user.id).single();
     if (settings) {
       setPlan(settings.plan || "basico");
       setBarberoNombre(settings.barber_name || "");
       barberoNombreRef.current = settings.barber_name || "";
+      setNotifEmail(settings.notif_email !== false);
+      setNotifPush(settings.notif_push !== false);
+      notifEmailRef.current = settings.notif_email !== false;
+      notifPushRef.current = settings.notif_push !== false;
     }
 
     const { data: servicesData } = await supabase.from('services').select('*').eq('barber_id', user.id);
@@ -115,11 +125,28 @@ export default function AgendaPage() {
   };
 
   const enviarEmail = async (tipo, datos) => {
+    if (!notifEmailRef.current) return;
     try {
       await fetch("/api/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tipo, ...datos }),
+      });
+    } catch {}
+  };
+
+  const enviarPush = async (titulo, cuerpo) => {
+    if (!notifPushRef.current) return;
+    try {
+      await fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barber_id: barberIdRef.current,
+          title: titulo,
+          body: cuerpo,
+          url: "/dashboard/agenda",
+        }),
       });
     } catch {}
   };
@@ -155,12 +182,12 @@ export default function AgendaPage() {
       setearHoraActual(); loadData();
       crearEventoCalendar(insertedData.id, clientName, servicioSeleccionado?.name || "Turno", startTime, servicioSeleccionado?.duration_minutes || 30);
 
-      // ✅ Email al barbero — usa ref para garantizar que el valor esté disponible
       const emailDestino = barberoEmailRef.current || user.email;
       const nombreDestino = barberoNombreRef.current || "";
+      const fechaFormateada = new Date(startTime).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
+      const horaFormateada = new Date(startTime).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
+
       if (emailDestino) {
-        const fechaFormateada = new Date(startTime).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
-        const horaFormateada = new Date(startTime).toLocaleTimeString("es-UY", { hour: "2-digit", minute: "2-digit" });
         await enviarEmail("nuevo_turno_barbero", {
           barberoEmail: emailDestino,
           barberoNombre: nombreDestino,
@@ -170,6 +197,12 @@ export default function AgendaPage() {
           hora: horaFormateada,
         });
       }
+
+      await enviarPush(
+        `Nuevo turno — ${clientName}`,
+        `${servicioSeleccionado?.name || "Turno"} a las ${horaFormateada}`
+      );
+
     } else if (error) { alert("Error al agendar: " + error.message); }
     setLoading(false);
   };
@@ -246,6 +279,10 @@ export default function AgendaPage() {
         servicio: appt.services?.name || "Turno",
         fecha: fechaStr, hora: horaStr,
       });
+      await enviarPush(
+        `Turno cancelado — ${appt.client_name}`,
+        `${appt.services?.name || "Turno"} del ${fechaStr} a las ${horaStr}`
+      );
     }
   };
 
@@ -397,9 +434,7 @@ export default function AgendaPage() {
             ) : (
               <>
                 <p className="font-bold text-sm">Plan Básico — {turnosMes}/{LIMITE_BASICO} este mes</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {turnosRestantes <= 10 ? `Quedan ${turnosRestantes} turnos.` : `Te quedan ${turnosRestantes} turnos.`}
-                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{turnosRestantes <= 10 ? `Quedan ${turnosRestantes} turnos.` : `Te quedan ${turnosRestantes} turnos.`}</p>
               </>
             )}
           </div>
