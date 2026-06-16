@@ -10,6 +10,13 @@ import {
   Settings, CreditCard, Link2, LogOut, Menu, X
 } from "lucide-react";
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -23,10 +30,50 @@ export default function DashboardLayout({ children }) {
         router.push("/login");
       } else {
         setBarberId(user.id);
+        registrarPush(user.id);
       }
     };
     checkUser();
   }, [router]);
+
+  const registrarPush = async (userId) => {
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+      // Verificar si ya tiene notif_push activo
+      const { data: settings } = await supabase
+        .from("barber_settings")
+        .select("notif_push")
+        .eq("barber_id", userId)
+        .single();
+
+      if (settings?.notif_push === false) return;
+
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+
+      const subExistente = await reg.pushManager.getSubscription();
+      if (subExistente) return; // Ya está suscrito
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") return;
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        ),
+      });
+
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barber_id: userId, subscription: sub }),
+      });
+    } catch (err) {
+      console.error("Error registrando push:", err);
+    }
+  };
 
   useEffect(() => {
     setMenuAbierto(false);
@@ -194,7 +241,7 @@ export default function DashboardLayout({ children }) {
             const Icon = item.icon;
             return (
               <Link key={item.name} href={item.href} className="flex-1">
-                <div className={`flex flex-col items-center justify-center py-2.5 px-1 transition-all`}>
+                <div className="flex flex-col items-center justify-center py-2.5 px-1 transition-all">
                   <Icon
                     size={20}
                     strokeWidth={isActive ? 2.5 : 1.5}
@@ -208,7 +255,6 @@ export default function DashboardLayout({ children }) {
             );
           })}
 
-          {/* Botón Más */}
           <button
             className="flex-1 flex flex-col items-center justify-center py-2.5 px-1"
             onClick={() => setMenuAbierto(!menuAbierto)}
@@ -223,7 +269,6 @@ export default function DashboardLayout({ children }) {
           </button>
         </div>
 
-        {/* Panel "Más" */}
         {menuAbierto && (
           <div className="absolute bottom-full left-0 right-0 bg-card border-t border-border/50 shadow-[0_-8px_24px_rgba(0,0,0,0.1)] rounded-t-2xl overflow-hidden">
             <div className="grid grid-cols-3 gap-1 p-3">
