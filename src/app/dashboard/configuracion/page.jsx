@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Bell, Mail, Smartphone } from "lucide-react";
+import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info } from "lucide-react";
 
 export default function ConfiguracionPage() {
   const [barberName, setBarberName] = useState("");
@@ -20,6 +20,8 @@ export default function ConfiguracionPage() {
   const [notifEmail, setNotifEmail] = useState(true);
   const [userId, setUserId] = useState(null);
   const [plan, setPlan] = useState("basico");
+  const [tooltipPush, setTooltipPush] = useState(false);
+  const [tooltipEmail, setTooltipEmail] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -230,26 +232,70 @@ export default function ConfiguracionPage() {
           <CardDescription>Elige cómo quieres que te avisemos cuando llega una reserva.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+
+          {/* Push */}
           <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <Smartphone size={16} strokeWidth={1.8} className="text-muted-foreground shrink-0" />
-              <div>
-                <p className="font-bold text-sm">Notificaciones push</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-sm">Notificaciones push</p>
+                  <button
+                    type="button"
+                    onClick={() => { setTooltipPush(!tooltipPush); setTooltipEmail(false); }}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Info size={13} strokeWidth={1.8} />
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground mt-0.5">Aviso instantáneo en tu celular aunque la app esté cerrada.</p>
+                {tooltipPush && (
+                  <div className="mt-2 p-3 bg-zinc-950 text-white rounded-xl text-xs space-y-1.5">
+                    <p>✅ App cerrada — llega igual</p>
+                    <p>✅ Celular bloqueado — aparece en la pantalla</p>
+                    <p>✅ App en segundo plano — llega igual</p>
+                    <p>❌ Celular apagado — no llega en ese momento</p>
+                    <p className="text-zinc-400 pt-1">En iPhone solo funciona si instalaste GB PRO en la pantalla de inicio.</p>
+                  </div>
+                )}
               </div>
             </div>
             <Toggle value={notifPush} onChange={setNotifPush} />
           </div>
+
+          {/* Email */}
           <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <Mail size={16} strokeWidth={1.8} className="text-muted-foreground shrink-0" />
-              <div>
-                <p className="font-bold text-sm">Notificaciones por email</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-sm">Notificaciones por email</p>
+                  <button
+                    type="button"
+                    onClick={() => { setTooltipEmail(!tooltipEmail); setTooltipPush(false); }}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Info size={13} strokeWidth={1.8} />
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground mt-0.5">Recibe un email cada vez que alguien reserve o cancele.</p>
+                {tooltipEmail && (
+                  <div className="mt-2 p-3 bg-zinc-950 text-white rounded-xl text-xs space-y-1.5">
+                    <p>✅ Celular apagado — llega igual, lo ves cuando enciendas</p>
+                    <p>✅ Sin internet — queda guardado en tu Gmail</p>
+                    <p>✅ Nunca se pierde — siempre queda en tu bandeja</p>
+                    <p className="text-zinc-400 pt-1">El email llega desde noreply@gbpro.app</p>
+                  </div>
+                )}
               </div>
             </div>
             <Toggle value={notifEmail} onChange={setNotifEmail} />
           </div>
+
+          {/* Nota general */}
+          <p className="text-xs text-muted-foreground px-1">
+            Recomendamos tener las dos activas — el push es instantáneo y el email queda guardado aunque el celular esté apagado.
+          </p>
         </CardContent>
       </Card>
 
