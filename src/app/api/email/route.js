@@ -281,7 +281,7 @@ export async function POST(request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: "GB PRO <onboarding@resend.dev>",
+      from: "GB PRO <noreply@gbpro.app>",
       to,
       subject,
       html,
