@@ -29,7 +29,7 @@ export default function TerminosPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-black uppercase tracking-wider">3. Pagos y suscripciones</h2>
-        <p>Los pagos del plan PRO se procesan a través de <strong>Lemon Squeezy</strong>, un procesador de pagos externo. GB PRO no almacena datos de tarjetas de crédito.</p>
+        <p>Los pagos del plan PRO se procesan a través de <strong>MercadoPago</strong>, un procesador de pagos externo. GB PRO no almacena datos de tarjetas de crédito.</p>
         <p>Las suscripciones se renuevan automáticamente al final de cada período (mensual o anual) hasta que sean canceladas. Podés cancelar en cualquier momento desde tu panel de cuenta. La cancelación entra en vigor al final del período pagado, sin reembolso proporcional por el tiempo restante.</p>
         <p>Los precios pueden modificarse con un aviso previo de 30 días por email.</p>
       </section>
@@ -80,7 +80,7 @@ export default function TerminosPage() {
       </section>
 
       <div className="border-t border-border/50 pt-6 text-xs text-muted-foreground">
-        <p>GB PRO — Operado por Mitchel, Montevideo, Uruguay.</p>
+        <p>GB PRO — Operado por Mitchel, Montevideo, Uruguay — <a href="https://gbpro.app" className="underline">gbpro.app</a></p>
       </div>
     </div>
   );

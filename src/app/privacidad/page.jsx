@@ -19,8 +19,9 @@ export default function PrivacidadPage() {
           <li>Email y contraseña (para autenticación)</li>
           <li>Nombre de la barbería, número de WhatsApp, horarios</li>
           <li>Ubicación GPS (solo si activás el Mapa VIP voluntariamente)</li>
-          <li>Datos de pago procesados por Lemon Squeezy (no los almacenamos directamente)</li>
+          <li>Datos de pago procesados por MercadoPago (no los almacenamos directamente)</li>
           <li>Tokens de Google Calendar (si conectás tu calendario)</li>
+          <li>Suscripciones push para notificaciones (si las activás)</li>
         </ul>
 
         <p className="font-bold mt-4">De los clientes finales (quienes reservan turnos):</p>
@@ -42,6 +43,7 @@ export default function PrivacidadPage() {
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li>Prestar y mejorar el servicio de GB PRO</li>
           <li>Enviar emails transaccionales (confirmaciones de turno, recordatorios, puntos)</li>
+          <li>Enviar notificaciones push si las activaste</li>
           <li>Procesar pagos y gestionar suscripciones</li>
           <li>Sincronizar turnos con Google Calendar (si lo activaste)</li>
           <li>Mostrar tu barbería en el mapa público (solo si lo activaste)</li>
@@ -56,25 +58,30 @@ export default function PrivacidadPage() {
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li><strong className="text-foreground">Supabase</strong> — base de datos y autenticación (servidores en EE.UU.)</li>
           <li><strong className="text-foreground">Vercel</strong> — hosting y deploy (servidores globales)</li>
-          <li><strong className="text-foreground">Resend</strong> — envío de emails transaccionales</li>
-          <li><strong className="text-foreground">Lemon Squeezy</strong> — procesamiento de pagos</li>
+          <li><strong className="text-foreground">Resend</strong> — envío de emails transaccionales desde noreply@gbpro.app</li>
+          <li><strong className="text-foreground">MercadoPago</strong> — procesamiento de pagos y suscripciones</li>
           <li><strong className="text-foreground">Google Calendar API</strong> — sincronización de agenda (solo si lo activaste)</li>
         </ul>
         <p>Todos estos proveedores cumplen con estándares internacionales de seguridad (SOC 2, ISO 27001 o equivalentes).</p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">4. Ubicación GPS</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">4. Notificaciones push</h2>
+        <p>Si activás las notificaciones push en Configuración, GB PRO guardará una suscripción técnica en nuestros servidores para poder enviarte alertas instantáneas cuando lleguen reservas. Esta suscripción no contiene datos personales identificables. Podés desactivarlas en cualquier momento desde Configuración → Notificaciones.</p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-black uppercase tracking-wider">5. Ubicación GPS</h2>
         <p>La ubicación de tu barbería solo se recopila si vos activás voluntariamente la función <strong>Mapa VIP</strong> en Configuración. Podés desactivarla en cualquier momento y tu ubicación dejará de mostrarse en el mapa público. No rastreamos tu ubicación en tiempo real.</p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">5. Cookies y tecnologías similares</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">6. Cookies y tecnologías similares</h2>
         <p>GB PRO usa cookies técnicas estrictamente necesarias para el funcionamiento de la plataforma (sesión de usuario, preferencias). No usamos cookies de seguimiento publicitario ni compartimos datos con redes de anuncios.</p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">6. Seguridad de los datos</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">7. Seguridad de los datos</h2>
         <p>Aplicamos medidas de seguridad técnicas y organizativas para proteger tus datos:</p>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li>Comunicaciones cifradas con TLS/HTTPS</li>
@@ -87,12 +94,12 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">7. Retención de datos</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">8. Retención de datos</h2>
         <p>Conservamos tus datos mientras tu cuenta esté activa. Si eliminás tu cuenta, tus datos personales serán eliminados permanentemente dentro de los 30 días siguientes. Los datos de facturación pueden conservarse por hasta 5 años por obligaciones contables y legales.</p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">8. Tus derechos</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">9. Tus derechos</h2>
         <p>Tenés los siguientes derechos sobre tus datos personales:</p>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li><strong className="text-foreground">Acceso:</strong> podés solicitar una copia de todos tus datos</li>
@@ -107,24 +114,24 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">9. Menores de edad</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">10. Menores de edad</h2>
         <p>GB PRO no está dirigido a menores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos que un usuario menor se ha registrado, eliminaremos su cuenta y datos de forma inmediata.</p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">10. Cambios a esta política</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">11. Cambios a esta política</h2>
         <p>Podemos actualizar esta política ocasionalmente. Te notificaremos por email con al menos 15 días de anticipación ante cambios significativos. El uso continuado de GB PRO después de esa fecha implica la aceptación de los cambios.</p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-base font-black uppercase tracking-wider">11. Contacto</h2>
+        <h2 className="text-base font-black uppercase tracking-wider">12. Contacto</h2>
         <p>Para consultas sobre privacidad o para ejercer tus derechos:</p>
         <p><strong>Email:</strong> soporte@gbpro.app</p>
         <p><strong>Responsable:</strong> Mitchel, Montevideo, Uruguay</p>
       </section>
 
       <div className="border-t border-border/50 pt-6 text-xs text-muted-foreground">
-        <p>GB PRO — Operado por Mitchel, Montevideo, Uruguay.</p>
+        <p>GB PRO — Operado por Mitchel, Montevideo, Uruguay — <a href="https://gbpro.app" className="underline">gbpro.app</a></p>
       </div>
     </div>
   );
