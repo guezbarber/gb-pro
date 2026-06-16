@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Bell } from "lucide-react";
+import { Check, Calendar, Link2, Bell, Mail, Smartphone } from "lucide-react";
 
 export default function ConfiguracionPage() {
-  console.log("Engañando a Vercel...");
   const [barberName, setBarberName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [openTime, setOpenTime] = useState("");
@@ -17,6 +16,8 @@ export default function ConfiguracionPage() {
   const [instagram, setInstagram] = useState("");
   const [porcentajeSena, setPorcentajeSena] = useState(0);
   const [recordatorioCierre, setRecordatorioCierre] = useState(false);
+  const [notifPush, setNotifPush] = useState(true);
+  const [notifEmail, setNotifEmail] = useState(true);
   const [userId, setUserId] = useState(null);
   const [plan, setPlan] = useState("basico");
 
@@ -45,6 +46,8 @@ export default function ConfiguracionPage() {
       setPlan(data.plan || "basico");
       setPorcentajeSena(data.porcentaje_sena || 0);
       setRecordatorioCierre(data.recordatorio_cierre || false);
+      setNotifPush(data.notif_push !== false);
+      setNotifEmail(data.notif_email !== false);
     }
 
     try {
@@ -71,6 +74,8 @@ export default function ConfiguracionPage() {
       instagram: plan === "PRO" || plan === "BOSS" ? instagram : null,
       porcentaje_sena: porcentajeSena,
       recordatorio_cierre: recordatorioCierre,
+      notif_push: notifPush,
+      notif_email: notifEmail,
     };
 
     let errorGuardado;
@@ -125,6 +130,16 @@ export default function ConfiguracionPage() {
   );
 
   const senasActivas = plan === "PRO" || plan === "BOSS";
+
+  const Toggle = ({ value, onChange }) => (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${value ? "bg-zinc-950" : "bg-muted"}`}
+    >
+      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${value ? "left-7" : "left-1"}`} />
+    </button>
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
@@ -203,6 +218,38 @@ export default function ConfiguracionPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Notificaciones */}
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <Bell size={15} strokeWidth={1.8} /> Notificaciones
+          </CardTitle>
+          <CardDescription>Elige cómo quieres que te avisemos cuando llega una reserva.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
+            <div className="flex items-center gap-3">
+              <Smartphone size={16} strokeWidth={1.8} className="text-muted-foreground shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Notificaciones push</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Aviso instantáneo en tu celular aunque la app esté cerrada.</p>
+              </div>
+            </div>
+            <Toggle value={notifPush} onChange={setNotifPush} />
+          </div>
+          <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
+            <div className="flex items-center gap-3">
+              <Mail size={16} strokeWidth={1.8} className="text-muted-foreground shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Notificaciones por email</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Recibe un email cada vez que alguien reserve o cancele.</p>
+              </div>
+            </div>
+            <Toggle value={notifEmail} onChange={setNotifEmail} />
+          </div>
         </CardContent>
       </Card>
 
@@ -285,13 +332,7 @@ export default function ConfiguracionPage() {
                       : "Actívalo para recibir el resumen al cerrar tu jornada."}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setRecordatorioCierre(!recordatorioCierre)}
-                  className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${recordatorioCierre ? "bg-zinc-950" : "bg-muted"}`}
-                >
-                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${recordatorioCierre ? "left-7" : "left-1"}`} />
-                </button>
+                <Toggle value={recordatorioCierre} onChange={setRecordatorioCierre} />
               </div>
             </div>
 
@@ -311,9 +352,7 @@ export default function ConfiguracionPage() {
                         {porcentajeSena === 0 ? "Desactivadas — los clientes reservan sin pagar" : `El cliente paga el ${porcentajeSena}% al reservar`}
                       </p>
                     </div>
-                    <button type="button" onClick={() => setPorcentajeSena(porcentajeSena === 0 ? 50 : 0)} className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${porcentajeSena > 0 ? "bg-zinc-950" : "bg-muted"}`}>
-                      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${porcentajeSena > 0 ? "left-7" : "left-1"}`} />
-                    </button>
+                    <Toggle value={porcentajeSena > 0} onChange={(v) => setPorcentajeSena(v ? 50 : 0)} />
                   </div>
                   {porcentajeSena > 0 && (
                     <div className="space-y-2">
@@ -353,4 +392,4 @@ export default function ConfiguracionPage() {
       </Card>
     </div>
   );
-}// Vercel, actualiza esto por favor
+}
