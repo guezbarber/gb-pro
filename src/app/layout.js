@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "GB PRO | El sistema operativo para barberías",
+  title: "GBPro ",
   description: "Agenda, clientes, marketing y pagos — todo en un solo lugar.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "GB PRO",
+    title: "GBPro",
   },
   icons: {
     icon: "/icon-192x192.png",
