@@ -14,13 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "GBPro ",
+  title: "GBPro",
+  applicationName: "GBPro", // Esta línea fuerza el nombre en celulares
   description: "Agenda, clientes, marketing y pagos — todo en un solo lugar.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "GBPro",
+    title: "GBPro", // Título específico para iOS
   },
   icons: {
     icon: "/icon-192x192.png",
@@ -41,13 +42,7 @@ export default function RootLayout({ children }) {
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="GB PRO" />
-        <link rel="apple-touch-icon" href="/icon-512x512.png" />
-      </head>
+      {/* Eliminamos el <head> manual. Next.js inyecta la metadata y el viewport automáticamente. */}
       <body className="min-h-full flex flex-col">
         <Navbar />
         {children} 
