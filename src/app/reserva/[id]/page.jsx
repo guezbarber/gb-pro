@@ -165,9 +165,12 @@ export default function ReservaPublicaPage({ params }) {
     let horaActual = new Date(`2000-01-01T${config.open_time}`);
     const horaCierre = new Date(`2000-01-01T${config.close_time}`);
 
-    const esHoy = fecha === getHoyStr();
+    // Antelación mínima configurada por el barbero (en minutos)
+    const antelacionMinutos = config.antelacion_minutos ?? 30;
+
+    // Momento límite: ahora + antelación mínima
     const ahora = new Date();
-    const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
+    const limiteReserva = new Date(ahora.getTime() + antelacionMinutos * 60000);
 
     while (horaActual < horaCierre) {
       const horaStr = `${String(horaActual.getHours()).padStart(2,"0")}:${String(horaActual.getMinutes()).padStart(2,"0")}`;
@@ -180,10 +183,12 @@ export default function ReservaPublicaPage({ params }) {
       const fin = new Date(horaActual.getTime() + duracionNuevo * 60000);
       if (fin > horaCierre) disponible = false;
 
-      if (esHoy) {
-        const minutosSlot = horaActual.getHours() * 60 + horaActual.getMinutes();
-        if (minutosSlot <= minutosAhora + 30) disponible = false;
-      }
+      // Construir el datetime real de este slot para compararlo con el límite de antelación
+      const [hSlot, mSlot] = horaStr.split(":").map(Number);
+      const slotDatetime = new Date(`${fecha}T00:00:00`);
+      slotDatetime.setHours(hSlot, mSlot, 0, 0);
+
+      if (slotDatetime < limiteReserva) disponible = false;
 
       if (disponible) horariosCalculados.push(horaStr);
       horaActual.setMinutes(horaActual.getMinutes() + INTERVALO);

@@ -6,7 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info } from "lucide-react";
+import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3 } from "lucide-react";
+
+const OPCIONES_ANTELACION = [
+  { valor: 0, label: "Sin restricción" },
+  { valor: 30, label: "30 minutos antes" },
+  { valor: 60, label: "1 hora antes" },
+  { valor: 120, label: "2 horas antes" },
+  { valor: 180, label: "3 horas antes" },
+  { valor: 1440, label: "1 día antes (24hs)" },
+];
 
 export default function ConfiguracionPage() {
   const [barberName, setBarberName] = useState("");
@@ -18,6 +27,7 @@ export default function ConfiguracionPage() {
   const [recordatorioCierre, setRecordatorioCierre] = useState(false);
   const [notifPush, setNotifPush] = useState(true);
   const [notifEmail, setNotifEmail] = useState(true);
+  const [antelacionMinutos, setAntelacionMinutos] = useState(30);
   const [userId, setUserId] = useState(null);
   const [plan, setPlan] = useState("basico");
   const [tooltipPush, setTooltipPush] = useState(false);
@@ -50,6 +60,7 @@ export default function ConfiguracionPage() {
       setRecordatorioCierre(data.recordatorio_cierre || false);
       setNotifPush(data.notif_push !== false);
       setNotifEmail(data.notif_email !== false);
+      setAntelacionMinutos(data.antelacion_minutos ?? 30);
     }
 
     try {
@@ -78,6 +89,7 @@ export default function ConfiguracionPage() {
       recordatorio_cierre: recordatorioCierre,
       notif_push: notifPush,
       notif_email: notifEmail,
+      antelacion_minutos: antelacionMinutos,
     };
 
     let errorGuardado;
@@ -295,6 +307,41 @@ export default function ConfiguracionPage() {
           {/* Nota general */}
           <p className="text-xs text-muted-foreground px-1">
             Recomendamos tener las dos activas — el push es instantáneo y el email queda guardado aunque el celular esté apagado.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Antelación de reserva */}
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <Clock3 size={15} strokeWidth={1.8} /> Antelación de reserva
+          </CardTitle>
+          <CardDescription>Define con cuánto tiempo de anticipación mínimo pueden reservar tus clientes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {OPCIONES_ANTELACION.map((op) => (
+              <button
+                key={op.valor}
+                type="button"
+                onClick={() => setAntelacionMinutos(op.valor)}
+                className={`p-3 rounded-xl border text-sm font-bold transition-all text-left ${
+                  antelacionMinutos === op.valor
+                    ? "bg-zinc-950 text-white border-zinc-950"
+                    : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                }`}
+              >
+                {op.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            {antelacionMinutos === 0
+              ? "Los clientes pueden reservar hasta el último minuto disponible."
+              : antelacionMinutos === 1440
+                ? "Los clientes deben reservar al menos un día antes del turno."
+                : `Los clientes deben reservar al menos ${antelacionMinutos} minutos antes del turno.`}
           </p>
         </CardContent>
       </Card>
