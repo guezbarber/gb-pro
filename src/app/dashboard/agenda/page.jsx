@@ -10,6 +10,8 @@ import WelcomeModal from "@/components/WelcomeModal";
 import DatePickerIOS from "@/components/DatePickerIOS";
 import { CalendarOff, Pencil, Check, X, RotateCcw, Trash2, ShoppingBag, Calendar } from "lucide-react";
 
+const INTERVALO = 15;
+
 function esHoyLocal(fechaISO) {
   const fecha = new Date(fechaISO);
   const hoy = new Date();
@@ -43,6 +45,10 @@ export default function AgendaPage() {
   const [barberoNombre, setBarberoNombre] = useState("");
   const [notifEmail, setNotifEmail] = useState(true);
   const [notifPush, setNotifPush] = useState(true);
+  const [openTime, setOpenTime] = useState("09:00");
+  const [closeTime, setCloseTime] = useState("20:00");
+  const [horasLibres, setHorasLibres] = useState([]);
+  const [cargandoHoras, setCargandoHoras] = useState(false);
   const barberoEmailRef = useRef("");
   const barberoNombreRef = useRef("");
   const barberIdRef = useRef("");
@@ -67,13 +73,20 @@ export default function AgendaPage() {
   const [editHora, setEditHora] = useState("");
   const [editServiceId, setEditServiceId] = useState("");
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [horasLibresEditar, setHorasLibresEditar] = useState([]);
+  const [cargandoHorasEditar, setCargandoHorasEditar] = useState(false);
 
-  const setearHoraActual = () => {
-    const ahora = new Date();
-    setTime(`${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`);
-  };
+  useEffect(() => { loadData(); }, []);
 
-  useEffect(() => { loadData(); setearHoraActual(); }, []);
+  useEffect(() => {
+    if (serviceId && date) calcularHorariosLibres(date, serviceId, setHorasLibres, setCargandoHoras, null);
+  }, [date, serviceId]);
+
+  useEffect(() => {
+    if (modalEditar && editServiceId && editFecha) {
+      calcularHorariosLibres(editFecha, editServiceId, setHorasLibresEditar, setCargandoHorasEditar, turnoEditando?.id);
+    }
+  }, [editFecha, editServiceId, modalEditar]);
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -83,7 +96,7 @@ export default function AgendaPage() {
     setBarberoEmail(user.email || "");
     barberoEmailRef.current = user.email || "";
 
-    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name, notif_email, notif_push').eq('barber_id', user.id).single();
+    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name, notif_email, notif_push, open_time, close_time').eq('barber_id', user.id).single();
     if (settings) {
       setPlan(settings.plan || "basico");
       setBarberoNombre(settings.barber_name || "");
@@ -92,6 +105,8 @@ export default function AgendaPage() {
       setNotifPush(settings.notif_push !== false);
       notifEmailRef.current = settings.notif_email !== false;
       notifPushRef.current = settings.notif_push !== false;
+      setOpenTime(settings.open_time || "09:00");
+      setCloseTime(settings.close_time || "20:00");
     }
 
     const { data: servicesData } = await supabase.from('services').select('*').eq('barber_id', user.id);
@@ -112,6 +127,76 @@ export default function AgendaPage() {
       const json = await res.json();
       setCalendarConectado(json.conectado || false);
     } catch { setCalendarConectado(false); }
+  };
+
+  // Calcula horarios libres en bloques de 15 min, igual que la página pública.
+  // excluirAppointmentId permite que al editar un turno, su propio horario actual no se cuente como "ocupado".
+  const calcularHorariosLibres = async (fecha, servicioId, setHoras, setCargando, excluirAppointmentId) => {
+    const servicio = services.find(s => s.id === servicioId);
+    if (!fecha || !servicio || !barberIdRef.current) { setHoras([]); return; }
+    setCargando(true);
+
+    const inicioDia = new Date(`${fecha}T00:00:00`).toISOString();
+    const finDia = new Date(`${fecha}T23:59:59`).toISOString();
+
+    const { data: turnosOcupados } = await supabase
+      .from("appointments")
+      .select("id, start_time, services(duration_minutes)")
+      .eq("barber_id", barberIdRef.current)
+      .gte("start_time", inicioDia)
+      .lte("start_time", finDia);
+
+    const { data: bloqueos } = await supabase
+      .from("blocked_slots")
+      .select("hora_inicio, hora_fin")
+      .eq("barber_id", barberIdRef.current)
+      .eq("fecha", fecha);
+
+    const minutosBloqueados = new Set();
+
+    (turnosOcupados || [])
+      .filter(t => t.id !== excluirAppointmentId)
+      .forEach((t) => {
+        const inicio = new Date(t.start_time);
+        const duracion = t.services?.duration_minutes || 30;
+        for (let m = 0; m < duracion; m += INTERVALO) {
+          const slot = new Date(inicio.getTime() + m * 60000);
+          minutosBloqueados.add(`${String(slot.getHours()).padStart(2,"0")}:${String(slot.getMinutes()).padStart(2,"0")}`);
+        }
+      });
+
+    (bloqueos || []).forEach((b) => {
+      const [hIni, mIni] = b.hora_inicio.split(":").map(Number);
+      const [hFin, mFin] = b.hora_fin.split(":").map(Number);
+      const inicioMin = hIni * 60 + mIni;
+      const finMin = hFin * 60 + mFin;
+      for (let m = inicioMin; m < finMin; m += INTERVALO) {
+        minutosBloqueados.add(`${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`);
+      }
+    });
+
+    const duracionNuevo = servicio.duration_minutes || 30;
+    const horariosCalculados = [];
+    let horaActual = new Date(`2000-01-01T${openTime}`);
+    const horaCierre = new Date(`2000-01-01T${closeTime}`);
+
+    while (horaActual < horaCierre) {
+      const horaStr = `${String(horaActual.getHours()).padStart(2,"0")}:${String(horaActual.getMinutes()).padStart(2,"0")}`;
+      let disponible = true;
+      for (let m = 0; m < duracionNuevo; m += INTERVALO) {
+        const s = new Date(horaActual.getTime() + m * 60000);
+        const sStr = `${String(s.getHours()).padStart(2,"0")}:${String(s.getMinutes()).padStart(2,"0")}`;
+        if (minutosBloqueados.has(sStr)) { disponible = false; break; }
+      }
+      const fin = new Date(horaActual.getTime() + duracionNuevo * 60000);
+      if (fin > horaCierre) disponible = false;
+
+      if (disponible) horariosCalculados.push(horaStr);
+      horaActual.setMinutes(horaActual.getMinutes() + INTERVALO);
+    }
+
+    setHoras(horariosCalculados);
+    setCargando(false);
   };
 
   const crearEventoCalendar = async (appointment_id, client_name, servicio, start_time, duration_minutes) => {
@@ -167,6 +252,7 @@ export default function AgendaPage() {
 
   const handleAddAppointment = async (e) => {
     e.preventDefault();
+    if (!time) { alert("Elegí un horario."); return; }
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     const startTime = new Date(`${date}T${time}`).toISOString();
@@ -178,8 +264,8 @@ export default function AgendaPage() {
     }]).select().single();
 
     if (!error && insertedData) {
-      setClientName(""); setClientPhone(""); setServiceId(""); setClienteEncontrado(false);
-      setearHoraActual(); loadData();
+      setClientName(""); setClientPhone(""); setServiceId(""); setClienteEncontrado(false); setTime("");
+      loadData();
       crearEventoCalendar(insertedData.id, clientName, servicioSeleccionado?.name || "Turno", startTime, servicioSeleccionado?.duration_minutes || 30);
 
       const emailDestino = barberoEmailRef.current || user.email;
@@ -382,7 +468,7 @@ export default function AgendaPage() {
 
       {modalEditar && turnoEditando && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="bg-zinc-950 p-6 text-white">
               <h2 className="text-xl font-black">Editar turno</h2>
               <p className="text-zinc-400 text-sm mt-1">{turnoEditando.client_name}</p>
@@ -390,21 +476,36 @@ export default function AgendaPage() {
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label>Servicio</Label>
-                <select className="flex h-12 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-base" value={editServiceId} onChange={(e) => setEditServiceId(e.target.value)}>
+                <select className="flex h-12 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-base" value={editServiceId} onChange={(e) => { setEditServiceId(e.target.value); setEditHora(""); }}>
                   {services.map(s => <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
                 <Label>Fecha</Label>
-                <DatePickerIOS value={editFecha} minDate={getHoyStr()} onChange={(fecha) => setEditFecha(fecha)} />
+                <DatePickerIOS value={editFecha} minDate={getHoyStr()} onChange={(fecha) => { setEditFecha(fecha); setEditHora(""); }} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Hora</Label>
-                <Input type="time" value={editHora} onChange={(e) => setEditHora(e.target.value)} className="bg-muted/30 h-12 text-base" />
+                {cargandoHorasEditar ? (
+                  <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">Buscando horarios...</p>
+                ) : horasLibresEditar.length === 0 ? (
+                  <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg text-center">Sin horarios libres ese día.</p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                    {horasLibresEditar.map((hora) => (
+                      <button key={hora} type="button" onClick={() => setEditHora(hora)}
+                        className={`p-2.5 rounded-lg border text-center font-bold transition-all text-xs active:scale-95 ${
+                          editHora === hora ? "bg-zinc-950 text-white border-zinc-950" : "bg-background hover:border-zinc-400 hover:bg-muted/20"
+                        }`}>
+                        {hora}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalEditar(false); setTurnoEditando(null); }}>Cancelar</Button>
-                <Button className="flex-1 font-bold h-12 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={guardarEdicion} disabled={guardandoEdicion}>
+                <Button className="flex-1 font-bold h-12 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={guardarEdicion} disabled={guardandoEdicion || !editHora}>
                   {guardandoEdicion ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
@@ -490,20 +591,37 @@ export default function AgendaPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="service">Servicio</Label>
-                  <select id="service" required className="flex h-11 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-base" value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
+                  <select id="service" required className="flex h-11 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-base" value={serviceId} onChange={(e) => { setServiceId(e.target.value); setTime(""); }}>
                     <option value="" disabled>Selecciona un servicio</option>
                     {services.map(s => <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Fecha</Label>
-                  <DatePickerIOS value={date} minDate={getHoyStr()} onChange={(fecha) => setDate(fecha)} />
+                  <DatePickerIOS value={date} minDate={getHoyStr()} onChange={(fecha) => { setDate(fecha); setTime(""); }} />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="time">Hora</Label>
-                  <Input id="time" type="time" required value={time} onChange={(e) => setTime(e.target.value)} className="bg-muted/30 h-11 text-base" />
+                <div className="space-y-2">
+                  <Label>Hora</Label>
+                  {!serviceId ? (
+                    <p className="text-xs text-muted-foreground p-3 bg-muted/20 rounded-lg text-center">Elegí un servicio primero.</p>
+                  ) : cargandoHoras ? (
+                    <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">Buscando horarios...</p>
+                  ) : horasLibres.length === 0 ? (
+                    <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg text-center">Sin horarios libres ese día.</p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                      {horasLibres.map((hora) => (
+                        <button key={hora} type="button" onClick={() => setTime(hora)}
+                          className={`p-2.5 rounded-lg border text-center font-bold transition-all text-xs active:scale-95 ${
+                            time === hora ? "bg-zinc-950 text-white border-zinc-950" : "bg-background hover:border-zinc-400 hover:bg-muted/20"
+                          }`}>
+                          {hora}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <Button type="submit" className="w-full font-bold mt-2 h-12 text-base" disabled={loading || !serviceId}>
+                <Button type="submit" className="w-full font-bold mt-2 h-12 text-base" disabled={loading || !serviceId || !time}>
                   {loading ? "Agendando..." : "Confirmar turno"}
                 </Button>
               </form>
