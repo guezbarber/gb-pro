@@ -37,23 +37,6 @@ export default function DashboardPage() {
     if (!user) return;
     setBarberId(user.id);
 
-    const { data: bshop } = await supabase
-      .from("barbershops")
-      .select("id, plan")
-      .eq("owner_id", user.id)
-      .single();
-
-    if (bshop) setPlan(bshop.plan || "basico");
-
-    const { data: barberRecord } = await supabase
-      .from("barbers")
-      .select("rol")
-      .eq("user_id", user.id)
-      .single();
-
-    const isOwner = barberRecord?.rol === "owner";
-    setEsOwner(isOwner);
-
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const manana = new Date(hoy);
@@ -61,12 +44,22 @@ export default function DashboardPage() {
     const hace7 = new Date(hoy);
     hace7.setDate(hace7.getDate() - 6);
 
-    const { data: turnos7 } = await supabase
-      .from("appointments")
-      .select("start_time, client_name, services(name, price)")
-      .eq("barber_id", user.id)
-      .gte("start_time", hace7.toISOString())
-      .order("start_time", { ascending: true });
+    // Todas las consultas independientes corren en paralelo en vez de en serie
+    const [
+      { data: bshop },
+      { data: barberRecord },
+      { data: turnos7 },
+      { data: todosLosTurnos },
+    ] = await Promise.all([
+      supabase.from("barbershops").select("id, plan").eq("owner_id", user.id).single(),
+      supabase.from("barbers").select("rol").eq("user_id", user.id).single(),
+      supabase.from("appointments").select("start_time, client_name, services(name, price)").eq("barber_id", user.id).gte("start_time", hace7.toISOString()).order("start_time", { ascending: true }),
+      supabase.from("appointments").select("client_name").eq("barber_id", user.id),
+    ]);
+
+    if (bshop) setPlan(bshop.plan || "basico");
+    const isOwner = barberRecord?.rol === "owner";
+    setEsOwner(isOwner);
 
     if (turnos7) {
       const turnosDeHoy = turnos7.filter(t => {
@@ -102,12 +95,9 @@ export default function DashboardPage() {
       );
     }
 
-    const { data: todosLosTurnos } = await supabase
-      .from("appointments")
-      .select("client_name")
-      .eq("barber_id", user.id);
     if (todosLosTurnos) setTotalClientes(new Set(todosLosTurnos.map(t => t.client_name)).size);
 
+    // Esto puede seguir cargando en segundo plano sin bloquear el resto del panel
     if (isOwner && bshop?.plan === "PRO" && bshop?.id) cargarEquipo(bshop.id);
 
     setLoading(false);
@@ -126,30 +116,21 @@ export default function DashboardPage() {
 
     const ahora = new Date();
     const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
 
     const equipoConStats = await Promise.all(
       miembros.filter(m => m.atiende_clientes).map(async (miembro) => {
-        const { data: turnosMes } = await supabase
-          .from("appointments")
-          .select("status, services(price)")
-          .eq("barber_member_id", miembro.id)
-          .gte("start_time", inicioMes);
+        const [{ data: turnosMes }, { data: turnosHoyData }] = await Promise.all([
+          supabase.from("appointments").select("status, services(price)").eq("barber_member_id", miembro.id).gte("start_time", inicioMes),
+          supabase.from("appointments").select("id, status").eq("barber_member_id", miembro.id).gte("start_time", hoy.toISOString()).lt("start_time", manana.toISOString()),
+        ]);
 
         const turnosValidos = (turnosMes || []).filter(t => t.status !== "falto");
         const totalTurnos = turnosValidos.length;
         const totalIngresos = turnosValidos.reduce((s, t) => s + (t.services?.price || 0), 0);
-
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const manana = new Date(hoy);
-        manana.setDate(manana.getDate() + 1);
-
-        const { data: turnosHoyData } = await supabase
-          .from("appointments")
-          .select("id, status")
-          .eq("barber_member_id", miembro.id)
-          .gte("start_time", hoy.toISOString())
-          .lt("start_time", manana.toISOString());
 
         return { ...miembro, turnosMes: totalTurnos, ingresosMes: totalIngresos, turnosHoy: (turnosHoyData || []).length };
       })
