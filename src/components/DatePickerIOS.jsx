@@ -133,15 +133,21 @@ function Drum({ items, initialIndex = 0, onChange }) {
 // value: "YYYY-MM-DD" string
 // onChange: (value: "YYYY-MM-DD") => void
 // minDate: "YYYY-MM-DD" (opcional, default = hoy)
+//
+// El año ya NO se muestra como selector visual. Se calcula automáticamente:
+// - Si el mes elegido es >= mes actual, se usa el año actual.
+// - Si el mes elegido es < mes actual (el usuario "dio la vuelta" al tambor
+//   hacia atrás, ej. eligió Enero estando en Noviembre), se asume el año siguiente.
 export default function DatePickerIOS({ value, onChange, minDate }) {
   const hoy = new Date();
   const min = minDate ? new Date(minDate + "T00:00:00") : hoy;
+  const anioBase = min.getFullYear();
+  const mesBase = min.getMonth();
 
-  // Años disponibles: desde min hasta 1 año adelante
-  const years = [];
-  for (let y = min.getFullYear(); y <= min.getFullYear() + 1; y++) {
-    years.push(String(y));
-  }
+  // Calcula automáticamente el año correcto dado un mes elegido en el tambor
+  const calcularAnio = (mesElegido) => {
+    return mesElegido >= mesBase ? anioBase : anioBase + 1;
+  };
 
   // Parsear value inicial
   const parseInitial = () => {
@@ -173,7 +179,6 @@ export default function DatePickerIOS({ value, onChange, minDate }) {
     onChange(str);
   };
 
-  const initialYearIdx = years.indexOf(String(initial.year));
   const initialMonthIdx = initial.month;
   const initialDayIdx = initial.day - 1;
 
@@ -202,30 +207,16 @@ export default function DatePickerIOS({ value, onChange, minDate }) {
         {/* Separador */}
         <div style={{ display:"flex", alignItems:"center", padding:"0 4px", color:"var(--color-text-tertiary)", fontSize:"18px" }}>/</div>
 
-        {/* Mes */}
+        {/* Mes — al cambiar, recalcula el año automáticamente */}
         <div style={{ flex: 1.4 }}>
           <Drum
             items={MESES}
             initialIndex={initialMonthIdx}
             onChange={(val, idx) => {
+              const nuevoAnio = calcularAnio(idx);
               setSelMonth(idx);
-              emit(selYear, idx, safeDay);
-            }}
-          />
-        </div>
-
-        {/* Separador */}
-        <div style={{ display:"flex", alignItems:"center", padding:"0 4px", color:"var(--color-text-tertiary)", fontSize:"18px" }}>/</div>
-
-        {/* Año */}
-        <div style={{ flex: 1.4 }}>
-          <Drum
-            items={years}
-            initialIndex={Math.max(0, initialYearIdx)}
-            onChange={(val) => {
-              const y = parseInt(val);
-              setSelYear(y);
-              emit(y, selMonth, safeDay);
+              setSelYear(nuevoAnio);
+              emit(nuevoAnio, idx, safeDay);
             }}
           />
         </div>
