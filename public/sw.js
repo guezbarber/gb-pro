@@ -5,8 +5,8 @@ self.addEventListener("push", function (event) {
 
   const options = {
     body: data.body,
-    icon: "/icon-192x192.png",
-    badge: "/icon-192x192.png",
+    icon: "/icon-192x192.png", // Este es el logo normal que sale al lado del texto
+    badge: "/badge-white.png", // ¡ESTA ES LA MAGIA! La silueta blanca para Android
     vibrate: [200, 100, 200],
     data: { url: data.url || "/dashboard/agenda" },
   };
