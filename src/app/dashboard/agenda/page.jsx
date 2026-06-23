@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import WelcomeModal from "@/components/WelcomeModal";
 import DatePickerIOS from "@/components/DatePickerIOS";
 import { CalendarOff, Pencil, Check, X, RotateCcw, Trash2, ShoppingBag, Calendar } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const INTERVALO = 15;
 
@@ -26,6 +27,8 @@ function getHoyStr() {
 const LIMITE_BASICO = 50;
 
 export default function AgendaPage() {
+  const { t } = useIdioma();
+
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [serviceId, setServiceId] = useState("");
@@ -129,8 +132,6 @@ export default function AgendaPage() {
     } catch { setCalendarConectado(false); }
   };
 
-  // Calcula horarios libres en bloques de 15 min, igual que la página pública.
-  // excluirAppointmentId permite que al editar un turno, su propio horario actual no se cuente como "ocupado".
   const calcularHorariosLibres = async (fecha, servicioId, setHoras, setCargando, excluirAppointmentId) => {
     const servicio = services.find(s => s.id === servicioId);
     if (!fecha || !servicio || !barberIdRef.current) { setHoras([]); return; }
@@ -252,7 +253,7 @@ export default function AgendaPage() {
 
   const handleAddAppointment = async (e) => {
     e.preventDefault();
-    if (!time) { alert("Elegí un horario."); return; }
+    if (!time) { alert(t("agenda.eligeHorario")); return; }
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     const startTime = new Date(`${date}T${time}`).toISOString();
@@ -289,7 +290,7 @@ export default function AgendaPage() {
         `${servicioSeleccionado?.name || "Turno"} a las ${horaFormateada}`
       );
 
-    } else if (error) { alert("Error al agendar: " + error.message); }
+    } else if (error) { alert("Error: " + error.message); }
     setLoading(false);
   };
 
@@ -318,7 +319,7 @@ export default function AgendaPage() {
         await crearEventoCalendar(turnoEditando.id, turnoEditando.client_name, servicioSeleccionado?.name || turnoEditando.services?.name || "Turno", newStartTime, servicioSeleccionado?.duration_minutes || turnoEditando.services?.duration_minutes || 30);
       }
       setModalEditar(false); setTurnoEditando(null);
-    } else { alert("Error al editar: " + error.message); }
+    } else { alert("Error: " + error.message); }
     setGuardandoEdicion(false);
   };
 
@@ -346,7 +347,7 @@ export default function AgendaPage() {
   };
 
   const handleDeleteAppointment = async (id) => {
-    if (!window.confirm("¿Borrar este turno?")) return;
+    if (!window.confirm(t("agenda.borrarTurnoConfirm"))) return;
     const appt = appointments.find(a => a.id === id);
     await borrarEventoCalendar(id);
     const { error } = await supabase.from('appointments').delete().eq('id', id);
@@ -389,8 +390,8 @@ export default function AgendaPage() {
   const turnosRestantes = Math.max(0, LIMITE_BASICO - turnosMes);
 
   const getStatusStyle = (status) => {
-    if (status === 'completado') return { border: 'border-green-200 bg-green-50', badge: 'bg-green-100 text-green-700', texto: 'Completado' };
-    if (status === 'falto') return { border: 'border-red-200 bg-red-50', badge: 'bg-red-100 text-red-600', texto: 'Faltó' };
+    if (status === 'completado') return { border: 'border-green-200 bg-green-50', badge: 'bg-green-100 text-green-700', texto: t("agenda.completado") };
+    if (status === 'falto') return { border: 'border-red-200 bg-red-50', badge: 'bg-red-100 text-red-600', texto: t("agenda.falto") };
     return { border: 'border-border/60 bg-white', badge: '', texto: '' };
   };
 
@@ -402,12 +403,12 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden">
             <div className="bg-zinc-950 p-6 text-white">
-              <h2 className="text-xl font-black">Corte completado</h2>
-              <p className="text-zinc-400 text-sm mt-1">{turnoCompletado?.client_name} — ¿Le vendiste algún producto?</p>
+              <h2 className="text-xl font-black">{t("agenda.corteCompletado")}</h2>
+              <p className="text-zinc-400 text-sm mt-1">{turnoCompletado?.client_name} — {t("agenda.vendisteProducto")}</p>
             </div>
             <div className="p-6 space-y-4">
               {productos.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-4">No hay productos con stock disponible.</p>
+                <p className="text-center text-muted-foreground text-sm py-4">{t("agenda.sinProductosStock")}</p>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {productos.map((p) => (
@@ -416,13 +417,13 @@ export default function AgendaPage() {
                       <ShoppingBag size={22} className="mb-2 opacity-60" />
                       <p className="font-bold text-sm">{p.nombre}</p>
                       <p className="font-black text-lg">${p.precio}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Stock: {p.stock}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t("agenda.stock")}: {p.stock}</p>
                     </button>
                   ))}
                 </div>
               )}
               <Button variant="outline" className="w-full font-bold h-12" onClick={() => { setModalVenta(false); setTurnoCompletado(null); }}>
-                No, cerrar
+                {t("agenda.noCerrar")}
               </Button>
             </div>
           </div>
@@ -433,32 +434,32 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden">
             <div className="bg-zinc-950 p-6 text-white">
-              <h2 className="text-xl font-black">Bloquear horario</h2>
-              <p className="text-zinc-400 text-sm mt-1">Este horario no estará disponible para reservas.</p>
+              <h2 className="text-xl font-black">{t("agenda.bloquearHorarioTitulo")}</h2>
+              <p className="text-zinc-400 text-sm mt-1">{t("agenda.bloquearHorarioDesc")}</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label>Fecha</Label>
+                <Label>{t("agenda.fecha")}</Label>
                 <DatePickerIOS value={bloqueoFecha} minDate={getHoyStr()} onChange={(fecha) => setBloqueoFecha(fecha)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Hora inicio</Label>
+                  <Label>{t("agenda.horaInicio")}</Label>
                   <Input type="time" value={bloqueoInicio} onChange={(e) => setBloqueoInicio(e.target.value)} className="bg-muted/30 h-12 text-base" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Hora fin</Label>
+                  <Label>{t("agenda.horaFin")}</Label>
                   <Input type="time" value={bloqueoFin} onChange={(e) => setBloqueoFin(e.target.value)} className="bg-muted/30 h-12 text-base" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Motivo <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>
-                <Input placeholder="Ej: Almuerzo, descanso..." value={bloqueoMotivo} onChange={(e) => setBloqueoMotivo(e.target.value)} className="bg-muted/30 h-12 text-base" />
+                <Label>{t("agenda.motivo")} <span className="text-muted-foreground text-xs font-normal">{t("agenda.opcional")}</span></Label>
+                <Input placeholder={t("agenda.placeholderMotivo")} value={bloqueoMotivo} onChange={(e) => setBloqueoMotivo(e.target.value)} className="bg-muted/30 h-12 text-base" />
               </div>
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalBloqueo(false); setBloqueoMotivo(""); }}>Cancelar</Button>
+                <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalBloqueo(false); setBloqueoMotivo(""); }}>{t("agenda.cancelar")}</Button>
                 <Button className="flex-1 font-bold h-12 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={guardarBloqueo} disabled={guardandoBloqueo}>
-                  {guardandoBloqueo ? "Guardando..." : "Bloquear"}
+                  {guardandoBloqueo ? t("agenda.guardando") : t("agenda.bloquear")}
                 </Button>
               </div>
             </div>
@@ -470,26 +471,26 @@ export default function AgendaPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="bg-zinc-950 p-6 text-white">
-              <h2 className="text-xl font-black">Editar turno</h2>
+              <h2 className="text-xl font-black">{t("agenda.editarTurno")}</h2>
               <p className="text-zinc-400 text-sm mt-1">{turnoEditando.client_name}</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label>Servicio</Label>
+                <Label>{t("agenda.servicio")}</Label>
                 <select className="flex h-12 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-base" value={editServiceId} onChange={(e) => { setEditServiceId(e.target.value); setEditHora(""); }}>
                   {services.map(s => <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label>Fecha</Label>
+                <Label>{t("agenda.fecha")}</Label>
                 <DatePickerIOS value={editFecha} minDate={getHoyStr()} onChange={(fecha) => { setEditFecha(fecha); setEditHora(""); }} />
               </div>
               <div className="space-y-2">
-                <Label>Hora</Label>
+                <Label>{t("agenda.hora")}</Label>
                 {cargandoHorasEditar ? (
-                  <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">Buscando horarios...</p>
+                  <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">{t("agenda.buscandoHorarios")}</p>
                 ) : horasLibresEditar.length === 0 ? (
-                  <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg text-center">Sin horarios libres ese día.</p>
+                  <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg text-center">{t("agenda.sinHorariosLibresEseDia")}</p>
                 ) : (
                   <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                     {horasLibresEditar.map((hora) => (
@@ -504,9 +505,9 @@ export default function AgendaPage() {
                 )}
               </div>
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalEditar(false); setTurnoEditando(null); }}>Cancelar</Button>
+                <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalEditar(false); setTurnoEditando(null); }}>{t("agenda.cancelar")}</Button>
                 <Button className="flex-1 font-bold h-12 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={guardarEdicion} disabled={guardandoEdicion || !editHora}>
-                  {guardandoEdicion ? "Guardando..." : "Guardar"}
+                  {guardandoEdicion ? t("agenda.guardando") : t("agenda.guardar")}
                 </Button>
               </div>
             </div>
@@ -515,11 +516,11 @@ export default function AgendaPage() {
       )}
 
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Agenda</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("agenda.titulo")}</h1>
         {calendarConectado && (
           <div className="flex items-center gap-1.5 mt-1">
             <Calendar size={12} className="text-green-600" />
-            <span className="text-xs font-medium text-green-600">Google Calendar activo</span>
+            <span className="text-xs font-medium text-green-600">{t("agenda.googleCalendarActivo")}</span>
           </div>
         )}
       </div>
@@ -529,18 +530,20 @@ export default function AgendaPage() {
           <div>
             {limiteAlcanzado ? (
               <>
-                <p className="font-bold text-sm text-red-700">Límite del mes alcanzado</p>
-                <p className="text-xs text-red-600 mt-0.5">Usaste los 50 turnos del plan básico.</p>
+                <p className="font-bold text-sm text-red-700">{t("agenda.limiteAlcanzado")}</p>
+                <p className="text-xs text-red-600 mt-0.5">{t("agenda.usasteLimite")}</p>
               </>
             ) : (
               <>
-                <p className="font-bold text-sm">Plan Básico — {turnosMes}/{LIMITE_BASICO} este mes</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{turnosRestantes <= 10 ? `Quedan ${turnosRestantes} turnos.` : `Te quedan ${turnosRestantes} turnos.`}</p>
+                <p className="font-bold text-sm">{t("agenda.planBasico")} — {turnosMes}/{LIMITE_BASICO} {t("agenda.esteMes")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {turnosRestantes <= 10 ? `${t("agenda.quedan")} ${turnosRestantes} ${t("agenda.turnosLower")}.` : `${t("agenda.teQuedan")} ${turnosRestantes} ${t("agenda.turnosLower")}.`}
+                </p>
               </>
             )}
           </div>
           <a href="/dashboard/suscripcion">
-            <Button size="sm" className="font-bold shrink-0 ml-4 bg-zinc-950 text-white hover:bg-zinc-800">Ver planes</Button>
+            <Button size="sm" className="font-bold shrink-0 ml-4 bg-zinc-950 text-white hover:bg-zinc-800">{t("agenda.verPlanes")}</Button>
           </a>
         </div>
       )}
@@ -548,66 +551,66 @@ export default function AgendaPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <Card className="bg-zinc-900 border-none text-white">
           <CardContent className="p-4 md:p-5">
-            <p className="text-zinc-400 text-xs font-semibold mb-1 uppercase tracking-wider">Turnos hoy</p>
+            <p className="text-zinc-400 text-xs font-semibold mb-1 uppercase tracking-wider">{t("agenda.turnosHoy")}</p>
             <p className="text-3xl md:text-4xl font-black">{turnosHoy.length}</p>
           </CardContent>
         </Card>
         <Card className="bg-zinc-900 border-none text-white">
           <CardContent className="p-4 md:p-5">
-            <p className="text-zinc-400 text-xs font-semibold mb-1 uppercase tracking-wider">Ingresos hoy</p>
+            <p className="text-zinc-400 text-xs font-semibold mb-1 uppercase tracking-wider">{t("agenda.ingresosHoy")}</p>
             <p className="text-3xl md:text-4xl font-black">${ingresosHoy}</p>
           </CardContent>
         </Card>
         <button onClick={() => setModalBloqueo(true)} className="col-span-2 md:col-span-1 border-dashed border-2 bg-muted/20 rounded-xl flex flex-col items-center justify-center p-4 hover:bg-muted/50 active:bg-muted/70 transition-colors">
           <CalendarOff size={20} className="mb-1.5 text-muted-foreground" />
-          <p className="font-bold text-sm">Bloquear horario</p>
-          <p className="text-xs text-muted-foreground">Para descansos</p>
+          <p className="font-bold text-sm">{t("agenda.bloquearHorario")}</p>
+          <p className="text-xs text-muted-foreground">{t("agenda.paraDescansos")}</p>
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border-border/50 shadow-sm h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">Nuevo turno</CardTitle>
+            <CardTitle className="text-base font-bold">{t("agenda.nuevoTurno")}</CardTitle>
           </CardHeader>
           <CardContent>
             {limiteAlcanzado ? (
               <div className="text-center space-y-4 py-6">
-                <p className="font-bold text-base">Límite alcanzado</p>
+                <p className="font-bold text-base">{t("agenda.limiteAlcanzadoCorto")}</p>
                 <a href="/dashboard/suscripcion" className="block">
-                  <Button className="w-full h-12 font-bold bg-zinc-950 text-white hover:bg-zinc-800">Ver planes</Button>
+                  <Button className="w-full h-12 font-bold bg-zinc-950 text-white hover:bg-zinc-800">{t("agenda.verPlanes")}</Button>
                 </a>
               </div>
             ) : (
               <form onSubmit={handleAddAppointment} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="clientPhone">Teléfono</Label>
-                  <Input id="clientPhone" type="tel" placeholder="Número del cliente..." value={clientPhone} onChange={handlePhoneChange} className="bg-muted/30 h-11 text-base" />
-                  {clienteEncontrado && <p className="text-xs text-green-600 font-medium">Cliente reconocido</p>}
+                  <Label htmlFor="clientPhone">{t("agenda.telefono")}</Label>
+                  <Input id="clientPhone" type="tel" placeholder={t("agenda.placeholderTelefono")} value={clientPhone} onChange={handlePhoneChange} className="bg-muted/30 h-11 text-base" />
+                  {clienteEncontrado && <p className="text-xs text-green-600 font-medium">{t("agenda.clienteReconocido")}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="clientName">Nombre</Label>
-                  <Input id="clientName" required placeholder="Nombre del cliente" value={clientName} onChange={(e) => setClientName(e.target.value)} className={`bg-muted/30 h-11 text-base ${clienteEncontrado ? "border-green-300" : ""}`} />
+                  <Label htmlFor="clientName">{t("agenda.nombre")}</Label>
+                  <Input id="clientName" required placeholder={t("agenda.placeholderNombre")} value={clientName} onChange={(e) => setClientName(e.target.value)} className={`bg-muted/30 h-11 text-base ${clienteEncontrado ? "border-green-300" : ""}`} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="service">Servicio</Label>
+                  <Label htmlFor="service">{t("agenda.servicio")}</Label>
                   <select id="service" required className="flex h-11 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-base" value={serviceId} onChange={(e) => { setServiceId(e.target.value); setTime(""); }}>
-                    <option value="" disabled>Selecciona un servicio</option>
+                    <option value="" disabled>{t("agenda.seleccionaServicio")}</option>
                     {services.map(s => <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Fecha</Label>
+                  <Label>{t("agenda.fecha")}</Label>
                   <DatePickerIOS value={date} minDate={getHoyStr()} onChange={(fecha) => { setDate(fecha); setTime(""); }} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Hora</Label>
+                  <Label>{t("agenda.hora")}</Label>
                   {!serviceId ? (
-                    <p className="text-xs text-muted-foreground p-3 bg-muted/20 rounded-lg text-center">Elegí un servicio primero.</p>
+                    <p className="text-xs text-muted-foreground p-3 bg-muted/20 rounded-lg text-center">{t("agenda.elegiServicioPrimero")}</p>
                   ) : cargandoHoras ? (
-                    <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">Buscando horarios...</p>
+                    <p className="text-sm text-muted-foreground text-center py-4 animate-pulse">{t("agenda.buscandoHorarios")}</p>
                   ) : horasLibres.length === 0 ? (
-                    <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg text-center">Sin horarios libres ese día.</p>
+                    <p className="text-sm text-destructive p-3 bg-destructive/10 rounded-lg text-center">{t("agenda.sinHorariosLibres")}</p>
                   ) : (
                     <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                       {horasLibres.map((hora) => (
@@ -622,7 +625,7 @@ export default function AgendaPage() {
                   )}
                 </div>
                 <Button type="submit" className="w-full font-bold mt-2 h-12 text-base" disabled={loading || !serviceId || !time}>
-                  {loading ? "Agendando..." : "Confirmar turno"}
+                  {loading ? t("agenda.agendando") : t("agenda.confirmarTurno")}
                 </Button>
               </form>
             )}
@@ -631,13 +634,13 @@ export default function AgendaPage() {
 
         <Card className="lg:col-span-2 border-border/50 shadow-sm h-fit">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-bold">Turnos</CardTitle>
+            <CardTitle className="text-base font-bold">{t("agenda.turnos")}</CardTitle>
             <span className="text-xs font-medium bg-muted text-muted-foreground px-2 py-1 rounded-full">{appointments.length}</span>
           </CardHeader>
           <CardContent>
             {appointments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm border-2 rounded-xl border-dashed bg-muted/10">
-                La agenda está vacía. Agrega un turno.
+                {t("agenda.agendaVacia")}
               </div>
             ) : (
               <div className="space-y-2">
@@ -671,7 +674,7 @@ export default function AgendaPage() {
                         <div className="text-left sm:text-right shrink-0">
                           <p className="font-black text-lg">{fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                           <p className={`text-xs font-medium ${esHoy && status === 'pendiente' ? 'text-zinc-900' : 'text-muted-foreground'}`}>
-                            {esHoy ? 'Hoy' : fecha.toLocaleDateString()}
+                            {esHoy ? t("agenda.hoy") : fecha.toLocaleDateString()}
                           </p>
                           {precio !== undefined && (
                             <p className={`text-sm font-bold ${status === 'falto' ? 'text-red-400 line-through' : 'text-zinc-700'}`}>${precio}</p>

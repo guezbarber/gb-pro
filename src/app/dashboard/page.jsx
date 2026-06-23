@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Plus, X, ShoppingBag, DollarSign } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   const [barberId, setBarberId] = useState(null);
+  const barberIdRef = useRef(null);
   const [copiado, setCopiado] = useState(false);
   const [plan, setPlan] = useState("basico");
   const [esOwner, setEsOwner] = useState(false);
@@ -30,12 +31,23 @@ export default function DashboardPage() {
   const [equipo, setEquipo] = useState([]);
   const [loadingEquipo, setLoadingEquipo] = useState(false);
 
+  // ── Turno rápido (cliente de la calle, sin agendar) ──
+  const [modalRapidoAbierto, setModalRapidoAbierto] = useState(false);
+  const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
+  const [productosDisponibles, setProductosDisponibles] = useState([]);
+  const [servicioRapidoId, setServicioRapidoId] = useState(null);
+  const [productoRapidoId, setProductoRapidoId] = useState(null);
+  const [extraRapido, setExtraRapido] = useState("");
+  const [guardandoRapido, setGuardandoRapido] = useState(false);
+  const [rapidoExito, setRapidoExito] = useState(false);
+
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setBarberId(user.id);
+    barberIdRef.current = user.id;
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -44,22 +56,27 @@ export default function DashboardPage() {
     const hace7 = new Date(hoy);
     hace7.setDate(hace7.getDate() - 6);
 
-    // Todas las consultas independientes corren en paralelo en vez de en serie
     const [
       { data: bshop },
       { data: barberRecord },
       { data: turnos7 },
       { data: todosLosTurnos },
+      { data: serviciosData },
+      { data: productosData },
     ] = await Promise.all([
       supabase.from("barbershops").select("id, plan").eq("owner_id", user.id).single(),
       supabase.from("barbers").select("rol").eq("user_id", user.id).single(),
       supabase.from("appointments").select("start_time, client_name, services(name, price)").eq("barber_id", user.id).gte("start_time", hace7.toISOString()).order("start_time", { ascending: true }),
       supabase.from("appointments").select("client_name").eq("barber_id", user.id),
+      supabase.from("services").select("*").eq("barber_id", user.id).order("name", { ascending: true }),
+      supabase.from("productos").select("*").eq("barber_id", user.id).gt("stock", 0).order("nombre", { ascending: true }),
     ]);
 
     if (bshop) setPlan(bshop.plan || "basico");
     const isOwner = barberRecord?.rol === "owner";
     setEsOwner(isOwner);
+    if (serviciosData) setServiciosDisponibles(serviciosData);
+    if (productosData) setProductosDisponibles(productosData);
 
     if (turnos7) {
       const turnosDeHoy = turnos7.filter(t => {
@@ -97,7 +114,6 @@ export default function DashboardPage() {
 
     if (todosLosTurnos) setTotalClientes(new Set(todosLosTurnos.map(t => t.client_name)).size);
 
-    // Esto puede seguir cargando en segundo plano sin bloquear el resto del panel
     if (isOwner && bshop?.plan === "PRO" && bshop?.id) cargarEquipo(bshop.id);
 
     setLoading(false);
@@ -144,6 +160,75 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(`https://gbpro.app/reserva/${barberId}`);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
+  };
+
+  const cerrarModalRapido = () => {
+    setModalRapidoAbierto(false);
+    setServicioRapidoId(null);
+    setProductoRapidoId(null);
+    setExtraRapido("");
+  };
+
+  // Registra un turno completado "ya mismo" sin pasar por la agenda —
+  // pensado para clientes de la calle que no quieren dar nombre/teléfono.
+  const registrarTurnoRapido = async () => {
+    if (!servicioRapidoId || !barberIdRef.current) return;
+    setGuardandoRapido(true);
+
+    const servicio = serviciosDisponibles.find(s => s.id === servicioRapidoId);
+    const ahoraISO = new Date().toISOString();
+
+    const { data: turnoInsertado, error } = await supabase.from("appointments").insert([{
+      barber_id: barberIdRef.current,
+      service_id: servicioRapidoId,
+      client_name: "Cliente sin registrar",
+      client_phone: null,
+      start_time: ahoraISO,
+      status: "completado",
+    }]).select().single();
+
+    if (error) {
+      alert("Error: " + error.message);
+      setGuardandoRapido(false);
+      return;
+    }
+
+    // Producto vendido junto al corte, si eligió uno
+    if (productoRapidoId) {
+      const producto = productosDisponibles.find(p => p.id === productoRapidoId);
+      if (producto) {
+        await supabase.from("ventas_productos").insert([{
+          barber_id: barberIdRef.current,
+          producto_id: producto.id,
+          producto_nombre: producto.nombre,
+          precio: producto.precio,
+          appointment_id: turnoInsertado?.id || null,
+        }]);
+        await supabase.from("productos").update({ stock: producto.stock - 1 }).eq("id", producto.id);
+      }
+    }
+
+    // Extra / propina — se guarda como gasto-ingreso suelto en finanzas
+    const extraNum = parseFloat(extraRapido);
+    if (extraNum > 0) {
+      await supabase.from("ingresos_extra").insert([{
+        barber_id: barberIdRef.current,
+        monto: extraNum,
+        motivo: "Extra / propina",
+        appointment_id: turnoInsertado?.id || null,
+      }]).then(({ error: errExtra }) => {
+        // Si la tabla ingresos_extra no existe todavía no rompemos el flujo
+        if (errExtra) console.warn("No se pudo registrar el extra:", errExtra.message);
+      });
+    }
+
+    setGuardandoRapido(false);
+    setRapidoExito(true);
+    setTimeout(() => {
+      setRapidoExito(false);
+      cerrarModalRapido();
+      loadData();
+    }, 900);
   };
 
   return (
@@ -314,6 +399,123 @@ export default function DashboardPage() {
         </Card>
 
       </div>
+
+      {/* ── BURBUJA FLOTANTE — turno rápido ── */}
+      <button
+        onClick={() => setModalRapidoAbierto(true)}
+        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 w-14 h-14 rounded-full bg-zinc-950 text-white shadow-xl flex items-center justify-center active:scale-90 transition-transform hover:bg-zinc-800"
+        aria-label="Registrar turno rápido"
+      >
+        <Plus size={26} strokeWidth={2.5} />
+      </button>
+
+      {/* ── MODAL — turno rápido ── */}
+      {modalRapidoAbierto && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="bg-zinc-950 p-6 text-white flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-black">Registro rápido</h2>
+                <p className="text-zinc-400 text-sm mt-1">Para clientes de la calle — sin agendar.</p>
+              </div>
+              <button onClick={cerrarModalRapido} className="text-zinc-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {rapidoExito ? (
+              <div className="p-10 flex flex-col items-center gap-3 text-center">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                  <Check size={26} className="text-green-600" strokeWidth={2.5} />
+                </div>
+                <p className="font-bold text-lg">¡Registrado!</p>
+                <p className="text-sm text-muted-foreground">Ya quedó sumado a tus ingresos de hoy.</p>
+              </div>
+            ) : (
+              <div className="p-6 space-y-5">
+                {/* Servicio */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Servicio</p>
+                  {serviciosDisponibles.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-3 bg-muted/20 rounded-lg text-center">
+                      Todavía no tienes servicios creados.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {serviciosDisponibles.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => setServicioRapidoId(s.id)}
+                          className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${
+                            servicioRapidoId === s.id ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                          }`}
+                        >
+                          <p className="font-bold text-sm leading-tight">{s.name}</p>
+                          <p className={`text-xs mt-0.5 ${servicioRapidoId === s.id ? "text-zinc-300" : "text-muted-foreground"}`}>${s.price}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Producto vendido (opcional) */}
+                {productosDisponibles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <ShoppingBag size={12} /> Producto vendido <span className="font-normal">(opcional)</span>
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setProductoRapidoId(null)}
+                        className={`p-2.5 rounded-xl border text-center text-xs font-bold transition-all active:scale-95 ${
+                          productoRapidoId === null ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                        }`}
+                      >
+                        Ninguno
+                      </button>
+                      {productosDisponibles.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setProductoRapidoId(p.id)}
+                          className={`p-2.5 rounded-xl border text-left transition-all active:scale-95 ${
+                            productoRapidoId === p.id ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                          }`}
+                        >
+                          <p className="font-bold text-xs leading-tight truncate">{p.nombre}</p>
+                          <p className={`text-xs ${productoRapidoId === p.id ? "text-zinc-300" : "text-muted-foreground"}`}>${p.precio}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Extra / propina */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <DollarSign size={12} /> Extra / propina <span className="font-normal">(opcional)</span>
+                  </p>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={extraRapido}
+                    onChange={(e) => setExtraRapido(e.target.value)}
+                    className="w-full h-12 rounded-xl border border-input bg-muted/30 px-4 text-base font-bold"
+                  />
+                </div>
+
+                <Button
+                  className="w-full h-12 font-bold text-base bg-zinc-950 hover:bg-zinc-800 text-white"
+                  disabled={!servicioRapidoId || guardandoRapido}
+                  onClick={registrarTurnoRapido}
+                >
+                  {guardandoRapido ? "Guardando..." : "Registrar"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

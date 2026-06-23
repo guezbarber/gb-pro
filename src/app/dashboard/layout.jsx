@@ -9,6 +9,7 @@ import {
   Users2, Map, Megaphone, ShoppingBag, Star, MessageSquare,
   Settings, CreditCard, Link2, LogOut, Menu, X
 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -17,11 +18,16 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+const BANDERAS = { es: "🇪🇸", en: "🇺🇸", pt: "🇧🇷" };
+const NOMBRES_IDIOMA = { es: "ES", en: "EN", pt: "PT" };
+
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [barberId, setBarberId] = useState(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const { idioma, t, cambiarIdioma, listo } = useIdioma();
+  const [selectorAbierto, setSelectorAbierto] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -40,7 +46,6 @@ export default function DashboardLayout({ children }) {
     try {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
-      // Verificar si ya tiene notif_push activo
       const { data: settings } = await supabase
         .from("barber_settings")
         .select("notif_push")
@@ -53,7 +58,7 @@ export default function DashboardLayout({ children }) {
       await navigator.serviceWorker.ready;
 
       const subExistente = await reg.pushManager.getSubscription();
-      if (subExistente) return; // Ya está suscrito
+      if (subExistente) return;
 
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return;
@@ -85,39 +90,39 @@ export default function DashboardLayout({ children }) {
   };
 
   const menuDiario = [
-    { name: "Panel", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Agenda", href: "/dashboard/agenda", icon: Calendar },
-    { name: "Clientes", href: "/dashboard/clientes", icon: Users },
-    { name: "Servicios", href: "/dashboard/services", icon: Scissors },
-    { name: "Finanzas", href: "/dashboard/finanzas", icon: DollarSign },
+    { name: t("menu.panel"), href: "/dashboard", icon: LayoutDashboard },
+    { name: t("menu.agenda"), href: "/dashboard/agenda", icon: Calendar },
+    { name: t("menu.clientes"), href: "/dashboard/clientes", icon: Users },
+    { name: t("menu.servicios"), href: "/dashboard/services", icon: Scissors },
+    { name: t("menu.finanzas"), href: "/dashboard/finanzas", icon: DollarSign },
   ];
 
   const menuHerramientas = [
-    { name: "Mi Equipo", href: "/dashboard/equipo", icon: Users2 },
-    { name: "Mapa VIP", href: "/dashboard/mapa", icon: Map },
-    { name: "Marketing", href: "/dashboard/marketing", icon: Megaphone },
-    { name: "Tienda", href: "/dashboard/tienda", icon: ShoppingBag },
-    { name: "Fidelidad", href: "/dashboard/fidelidad", icon: Star },
-    { name: "Reseñas", href: "/dashboard/resenas", icon: MessageSquare },
+    { name: t("menu.miEquipo"), href: "/dashboard/equipo", icon: Users2 },
+    { name: t("menu.mapaVip"), href: "/dashboard/mapa", icon: Map },
+    { name: t("menu.marketing"), href: "/dashboard/marketing", icon: Megaphone },
+    { name: t("menu.tienda"), href: "/dashboard/tienda", icon: ShoppingBag },
+    { name: t("menu.fidelidad"), href: "/dashboard/fidelidad", icon: Star },
+    { name: t("menu.resenas"), href: "/dashboard/resenas", icon: MessageSquare },
   ];
 
   const navMovilPrincipal = [
-    { name: "Panel", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Agenda", href: "/dashboard/agenda", icon: Calendar },
-    { name: "Clientes", href: "/dashboard/clientes", icon: Users },
-    { name: "Finanzas", href: "/dashboard/finanzas", icon: DollarSign },
+    { name: t("menu.panel"), href: "/dashboard", icon: LayoutDashboard },
+    { name: t("menu.agenda"), href: "/dashboard/agenda", icon: Calendar },
+    { name: t("menu.clientes"), href: "/dashboard/clientes", icon: Users },
+    { name: t("menu.finanzas"), href: "/dashboard/finanzas", icon: DollarSign },
   ];
 
   const navMovilMas = [
-    { name: "Servicios", href: "/dashboard/services", icon: Scissors },
-    { name: "Mi Equipo", href: "/dashboard/equipo", icon: Users2 },
-    { name: "Mapa VIP", href: "/dashboard/mapa", icon: Map },
-    { name: "Marketing", href: "/dashboard/marketing", icon: Megaphone },
-    { name: "Tienda", href: "/dashboard/tienda", icon: ShoppingBag },
-    { name: "Fidelidad", href: "/dashboard/fidelidad", icon: Star },
-    { name: "Reseñas", href: "/dashboard/resenas", icon: MessageSquare },
-    { name: "Configuración", href: "/dashboard/configuracion", icon: Settings },
-    { name: "Suscripción", href: "/dashboard/suscripcion", icon: CreditCard },
+    { name: t("menu.servicios"), href: "/dashboard/services", icon: Scissors },
+    { name: t("menu.miEquipo"), href: "/dashboard/equipo", icon: Users2 },
+    { name: t("menu.mapaVip"), href: "/dashboard/mapa", icon: Map },
+    { name: t("menu.marketing"), href: "/dashboard/marketing", icon: Megaphone },
+    { name: t("menu.tienda"), href: "/dashboard/tienda", icon: ShoppingBag },
+    { name: t("menu.fidelidad"), href: "/dashboard/fidelidad", icon: Star },
+    { name: t("menu.resenas"), href: "/dashboard/resenas", icon: MessageSquare },
+    { name: t("menu.configuracion"), href: "/dashboard/configuracion", icon: Settings },
+    { name: t("menu.suscripcion"), href: "/dashboard/suscripcion", icon: CreditCard },
   ];
 
   const renderLinks = (items) => {
@@ -139,6 +144,36 @@ export default function DashboardLayout({ children }) {
     });
   };
 
+  // Selector de idioma compacto — disponible en sidebar desktop y header móvil
+  const SelectorIdioma = ({ compacto }) => (
+    <div className="relative">
+      <button
+        onClick={() => setSelectorAbierto(!selectorAbierto)}
+        className={compacto
+          ? "flex items-center gap-1 px-2 py-1.5 rounded-lg border border-border/50 text-xs font-bold text-muted-foreground hover:bg-muted transition-all"
+          : "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+        }
+      >
+        {BANDERAS[idioma]} {NOMBRES_IDIOMA[idioma]}
+      </button>
+      {selectorAbierto && (
+        <div className={`absolute ${compacto ? "right-0" : "left-0"} bottom-full mb-1 bg-white rounded-xl shadow-xl border border-border/50 overflow-hidden z-50 min-w-[110px]`}>
+          {Object.keys(BANDERAS).map((cod) => (
+            <button
+              key={cod}
+              onClick={() => { cambiarIdioma(cod); setSelectorAbierto(false); }}
+              className={`flex items-center gap-2 w-full px-3 py-2 text-sm font-bold text-left hover:bg-muted/30 transition-colors ${idioma === cod ? "bg-muted/20" : ""}`}
+            >
+              {BANDERAS[cod]} {NOMBRES_IDIOMA[cod]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (!listo) return null;
+
   return (
     <div className="min-h-screen bg-muted/10 flex flex-col md:flex-row">
 
@@ -150,13 +185,13 @@ export default function DashboardLayout({ children }) {
 
         <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
           <div>
-            <p className="px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Diario</p>
+            <p className="px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t("menu.diario")}</p>
             {renderLinks(menuDiario)}
           </div>
 
           <div>
             <div className="flex items-center gap-2 px-3 mb-2">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Herramientas</p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t("menu.herramientas")}</p>
               <span className="bg-zinc-900 text-white text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wide">PRO</span>
             </div>
             {renderLinks(menuHerramientas)}
@@ -165,8 +200,8 @@ export default function DashboardLayout({ children }) {
 
         <div className="px-3 py-3 border-t border-border/50 space-y-0.5 shrink-0">
           {[
-            { name: "Configuración", href: "/dashboard/configuracion", icon: Settings },
-            { name: "Suscripción", href: "/dashboard/suscripcion", icon: CreditCard },
+            { name: t("menu.configuracion"), href: "/dashboard/configuracion", icon: Settings },
+            { name: t("menu.suscripcion"), href: "/dashboard/suscripcion", icon: CreditCard },
           ].map(({ name, href, icon: Icon }) => {
             const isActive = pathname === href;
             return (
@@ -174,7 +209,7 @@ export default function DashboardLayout({ children }) {
                 <div className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium mb-0.5 ${
                   isActive
                     ? "bg-foreground text-background"
-                    : name === "Suscripción"
+                    : href === "/dashboard/suscripcion"
                       ? "text-blue-600 hover:bg-blue-50"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}>
@@ -189,17 +224,19 @@ export default function DashboardLayout({ children }) {
             <a href={`/reserva/${barberId}`} target="_blank" rel="noopener noreferrer">
               <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
                 <Link2 size={15} strokeWidth={1.8} />
-                Mi enlace
+                {t("menu.miEnlace")}
               </div>
             </a>
           )}
+
+          <SelectorIdioma compacto={false} />
 
           <button
             onClick={handleCerrarSesion}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
           >
             <LogOut size={15} strokeWidth={1.8} />
-            Salir
+            {t("menu.salir")}
           </button>
         </div>
       </aside>
@@ -208,11 +245,12 @@ export default function DashboardLayout({ children }) {
       <header className="md:hidden bg-card border-b border-border/50 px-4 py-3 sticky top-0 z-40 flex justify-between items-center shadow-sm backdrop-blur-md bg-white/90">
         <span className="font-black tracking-tighter text-lg">GB PRO</span>
         <div className="flex items-center gap-2">
+          <SelectorIdioma compacto={true} />
           {barberId && (
             <a href={`/reserva/${barberId}`} target="_blank" rel="noopener noreferrer">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/50 text-xs font-bold text-muted-foreground hover:bg-muted transition-all">
                 <Link2 size={12} />
-                Mi Link
+                {t("menu.miLink")}
               </div>
             </a>
           )}
@@ -221,7 +259,7 @@ export default function DashboardLayout({ children }) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-destructive hover:bg-destructive/10 transition-all"
           >
             <LogOut size={12} />
-            Salir
+            {t("menu.salir")}
           </button>
         </div>
       </header>
@@ -264,7 +302,7 @@ export default function DashboardLayout({ children }) {
               : <Menu size={20} strokeWidth={1.5} className="text-muted-foreground" />
             }
             <span className={`text-[10px] font-semibold mt-0.5 ${menuAbierto ? "text-foreground" : "text-muted-foreground"}`}>
-              Más
+              {t("menu.mas")}
             </span>
           </button>
         </div>
