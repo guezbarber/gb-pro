@@ -4,12 +4,21 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Legend
 } from "recharts";
+import { AlertCircle, Lightbulb, MessageSquarePlus } from "lucide-react";
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+const ESTADOS_FEEDBACK = [
+  { valor: "recibido", label: "Recibido", color: "bg-zinc-100 text-zinc-700" },
+  { valor: "en_revision", label: "En revisión", color: "bg-amber-100 text-amber-700" },
+  { valor: "solucionado", label: "Solucionado", color: "bg-green-100 text-green-700" },
+  { valor: "no_aplica", label: "No aplica", color: "bg-muted text-muted-foreground" },
+];
 
 export default function AdminSecretoPage() {
   const router = useRouter();
@@ -17,6 +26,12 @@ export default function AdminSecretoPage() {
   const [barberShops, setBarberShops] = useState([]);
   const [dataCrecimiento, setDataCrecimiento] = useState([]);
   const [dataTurnos, setDataTurnos] = useState([]);
+
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [respuestas, setRespuestas] = useState({});
+  const [guardandoId, setGuardandoId] = useState(null);
 
   useEffect(() => { cargarDatos(); }, []);
 
@@ -37,7 +52,6 @@ export default function AdminSecretoPage() {
       calcularCrecimiento(data);
     }
 
-    // Turnos totales por mes (últimos 6 meses)
     const hace6 = new Date();
     hace6.setMonth(hace6.getMonth() - 5);
     hace6.setDate(1);
@@ -50,14 +64,44 @@ export default function AdminSecretoPage() {
 
     if (turnos) calcularTurnos(turnos);
 
+    await cargarFeedbacks();
+
     setLoading(false);
+  };
+
+  const cargarFeedbacks = async () => {
+    const { data } = await supabase
+      .from("feedback")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setFeedbacks(data);
+  };
+
+  const actualizarFeedback = async (id, cambios) => {
+    setGuardandoId(id);
+    const { error } = await supabase
+      .from("feedback")
+      .update({ ...cambios, updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (!error) {
+      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, ...cambios } : f));
+    } else {
+      alert("Error: " + error.message);
+    }
+    setGuardandoId(null);
+  };
+
+  const guardarRespuesta = async (id) => {
+    const texto = respuestas[id];
+    if (texto === undefined) return;
+    await actualizarFeedback(id, { respuesta_admin: texto });
   };
 
   const calcularCrecimiento = (data) => {
     const ahora = new Date();
     const mapa = {};
 
-    // Últimos 6 meses
     for (let i = 5; i >= 0; i--) {
       const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -74,7 +118,6 @@ export default function AdminSecretoPage() {
       }
     });
 
-    // Acumulado
     let acumulado = 0;
     let acumuladoPro = 0;
     const resultado = Object.values(mapa).map(m => {
@@ -111,6 +154,14 @@ export default function AdminSecretoPage() {
   const porcentajePro = totalBarberias > 0 ? Math.round((totalPro / totalBarberias) * 100) : 0;
   const nuevosEsteMes = dataCrecimiento.length > 0 ? dataCrecimiento[dataCrecimiento.length - 1]?.total || 0 : 0;
 
+  const feedbacksFiltrados = feedbacks.filter(f => {
+    if (filtroEstado !== "todos" && f.estado !== filtroEstado) return false;
+    if (filtroTipo !== "todos" && f.tipo !== filtroTipo) return false;
+    return true;
+  });
+
+  const pendientes = feedbacks.filter(f => f.estado === "recibido" || f.estado === "en_revision").length;
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <p className="text-muted-foreground animate-pulse">Cargando...</p>
@@ -125,7 +176,7 @@ export default function AdminSecretoPage() {
       </div>
 
       {/* Métricas principales */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="bg-zinc-950 text-white border-none">
           <CardContent className="p-5">
             <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">Total barberías</p>
@@ -150,12 +201,17 @@ export default function AdminSecretoPage() {
             <p className="text-4xl font-black">{nuevosEsteMes}</p>
           </CardContent>
         </Card>
+        <Card className="border-border/50 bg-amber-50">
+          <CardContent className="p-5">
+            <p className="text-amber-700 text-xs font-semibold uppercase tracking-wider mb-1">Feedback pendiente</p>
+            <p className="text-4xl font-black text-amber-700">{pendientes}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Gráficas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* Crecimiento acumulado */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold">Crecimiento de usuarios</CardTitle>
@@ -180,7 +236,6 @@ export default function AdminSecretoPage() {
           </CardContent>
         </Card>
 
-        {/* Nuevos por mes */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold">Registros por mes</CardTitle>
@@ -204,7 +259,6 @@ export default function AdminSecretoPage() {
           </CardContent>
         </Card>
 
-        {/* Turnos totales por mes */}
         <Card className="border-border/50 lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold">Turnos en la plataforma</CardTitle>
@@ -255,6 +309,110 @@ export default function AdminSecretoPage() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Feedback de usuarios */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <MessageSquarePlus size={15} strokeWidth={1.8} /> Sugerencias y errores reportados
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">{feedbacks.length} en total — {pendientes} pendientes</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+
+          {/* Filtros */}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1.5">
+              {["todos", "recibido", "en_revision", "solucionado", "no_aplica"].map((est) => (
+                <button
+                  key={est}
+                  onClick={() => setFiltroEstado(est)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${
+                    filtroEstado === est ? "bg-zinc-950 text-white" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  {est === "todos" ? "Todos" : ESTADOS_FEEDBACK.find(e => e.valor === est)?.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5 ml-auto">
+              {["todos", "error", "sugerencia"].map((tip) => (
+                <button
+                  key={tip}
+                  onClick={() => setFiltroTipo(tip)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${
+                    filtroTipo === tip ? "bg-zinc-950 text-white" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  {tip === "todos" ? "Todos los tipos" : tip === "error" ? "Errores" : "Sugerencias"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Lista */}
+          {feedbacksFiltrados.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground text-sm">No hay feedback con estos filtros.</p>
+          ) : (
+            <div className="space-y-3">
+              {feedbacksFiltrados.map((f) => {
+                const estadoActual = ESTADOS_FEEDBACK.find(e => e.valor === f.estado) || ESTADOS_FEEDBACK[0];
+                return (
+                  <div key={f.id} className="p-4 rounded-xl border border-border/50 bg-muted/10">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        {f.tipo === "error" ? <AlertCircle size={15} className="text-red-500 shrink-0" /> : <Lightbulb size={15} className="text-amber-500 shrink-0" />}
+                        <div>
+                          <p className="font-bold text-sm">{f.barber_name || "Sin nombre"}</p>
+                          <p className="text-xs text-muted-foreground">{f.barber_email}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {new Date(f.created_at).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      </span>
+                    </div>
+
+                    <p className="text-sm mt-3 p-3 bg-background rounded-lg border border-border/30">{f.mensaje}</p>
+
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {ESTADOS_FEEDBACK.map((est) => (
+                        <button
+                          key={est.valor}
+                          onClick={() => actualizarFeedback(f.id, { estado: est.valor })}
+                          disabled={guardandoId === f.id}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full transition-all ${
+                            f.estado === est.valor ? est.color + " ring-2 ring-offset-1 ring-zinc-300" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          {est.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Responder al barbero (opcional)..."
+                        defaultValue={f.respuesta_admin || ""}
+                        onChange={(e) => setRespuestas(prev => ({ ...prev, [f.id]: e.target.value }))}
+                        className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        className="h-9 font-bold bg-zinc-950 text-white hover:bg-zinc-800"
+                        onClick={() => guardarRespuesta(f.id)}
+                        disabled={guardandoId === f.id || respuestas[f.id] === undefined}
+                      >
+                        Guardar
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
