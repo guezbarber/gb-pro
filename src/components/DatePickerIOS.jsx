@@ -12,6 +12,7 @@ function Drum({ items, initialIndex = 0, onChange }) {
   const pointerStartY = useRef(0);
   const pointerStartIdx = useRef(0);
   const animRef = useRef(null);
+  const draggingRef = useRef(false);
 
   const clamp = (i) => ((i % items.length) + items.length) % items.length;
 
@@ -56,14 +57,28 @@ function Drum({ items, initialIndex = 0, onChange }) {
     onChange(items[idxRef.current], idxRef.current);
   }, [items]);
 
+  // Libera siempre la captura de puntero, sin importar dónde termine el gesto.
+  // Sin esto, un drag rápido que sale del tambor puede dejar el puntero
+  // "capturado" y bloquear los toques en elementos cercanos (como los
+  // botones de hora justo debajo en la agenda manual).
+  const releaseCapture = (e) => {
+    try {
+      if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {}
+  };
+
   const onPointerDown = (e) => {
     e.currentTarget.setPointerCapture(e.pointerId);
+    draggingRef.current = true;
     pointerStartY.current = e.clientY;
     pointerStartIdx.current = idxRef.current;
     if (animRef.current) cancelAnimationFrame(animRef.current);
   };
 
   const onPointerMove = (e) => {
+    if (!draggingRef.current) return;
     if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
     const dy = pointerStartY.current - e.clientY;
     const shift = Math.round(dy / ITEM_H);
@@ -72,9 +87,18 @@ function Drum({ items, initialIndex = 0, onChange }) {
   };
 
   const onPointerUp = (e) => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
     const dy = pointerStartY.current - e.clientY;
     const shift = Math.round(dy / ITEM_H);
     snapTo(pointerStartIdx.current + shift);
+    releaseCapture(e);
+  };
+
+  const onPointerCancel = (e) => {
+    draggingRef.current = false;
+    snapTo(idxRef.current);
+    releaseCapture(e);
   };
 
   const onWheel = (e) => {
@@ -99,6 +123,8 @@ function Drum({ items, initialIndex = 0, onChange }) {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onPointerLeave={onPointerCancel}
       onWheel={onWheel}
     >
       {/* Fade top */}
