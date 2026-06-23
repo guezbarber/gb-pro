@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3 } from "lucide-react";
+import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3, MessageSquarePlus, AlertCircle, Lightbulb } from "lucide-react";
 
 const OPCIONES_ANTELACION = [
   { valor: 0, label: "Sin restricción" },
@@ -16,6 +16,13 @@ const OPCIONES_ANTELACION = [
   { valor: 180, label: "3 horas antes" },
   { valor: 1440, label: "1 día antes (24hs)" },
 ];
+
+const ESTADOS_FEEDBACK = {
+  recibido: { label: "Recibido", color: "bg-zinc-100 text-zinc-700" },
+  en_revision: { label: "En revisión", color: "bg-amber-100 text-amber-700" },
+  solucionado: { label: "Solucionado", color: "bg-green-100 text-green-700" },
+  no_aplica: { label: "No aplica", color: "bg-muted text-muted-foreground" },
+};
 
 export default function ConfiguracionPage() {
   const [barberName, setBarberName] = useState("");
@@ -29,6 +36,7 @@ export default function ConfiguracionPage() {
   const [notifEmail, setNotifEmail] = useState(true);
   const [antelacionMinutos, setAntelacionMinutos] = useState(30);
   const [userId, setUserId] = useState(null);
+  const [userEmail, setUserEmail] = useState("");
   const [plan, setPlan] = useState("basico");
   const [tooltipPush, setTooltipPush] = useState(false);
   const [tooltipEmail, setTooltipEmail] = useState(false);
@@ -41,12 +49,20 @@ export default function ConfiguracionPage() {
   const [calendarConectado, setCalendarConectado] = useState(false);
   const [conectandoCalendar, setConectandoCalendar] = useState(false);
 
+  const [tipoFeedback, setTipoFeedback] = useState("sugerencia");
+  const [mensajeFeedback, setMensajeFeedback] = useState("");
+  const [enviandoFeedback, setEnviandoFeedback] = useState(false);
+  const [feedbackEnviado, setFeedbackEnviado] = useState(false);
+  const [misFeedbacks, setMisFeedbacks] = useState([]);
+  const [cargandoFeedbacks, setCargandoFeedbacks] = useState(true);
+
   useEffect(() => { cargarConfiguracion(); }, []);
 
   const cargarConfiguracion = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setUserId(user.id);
+    setUserEmail(user.email || "");
 
     const { data } = await supabase.from('barber_settings').select('*').eq('barber_id', user.id).single();
     if (data) {
@@ -69,7 +85,44 @@ export default function ConfiguracionPage() {
       setCalendarConectado(calData.conectado);
     } catch { setCalendarConectado(false); }
 
+    cargarFeedbacks(user.id);
     setLoading(false);
+  };
+
+  const cargarFeedbacks = async (uid) => {
+    setCargandoFeedbacks(true);
+    const { data } = await supabase
+      .from("feedback")
+      .select("*")
+      .eq("barber_id", uid)
+      .order("created_at", { ascending: false });
+    if (data) setMisFeedbacks(data);
+    setCargandoFeedbacks(false);
+  };
+
+  const enviarFeedback = async (e) => {
+    e.preventDefault();
+    if (!mensajeFeedback.trim()) return;
+    setEnviandoFeedback(true);
+
+    const { error } = await supabase.from("feedback").insert([{
+      barber_id: userId,
+      barber_name: barberName || null,
+      barber_email: userEmail,
+      tipo: tipoFeedback,
+      mensaje: mensajeFeedback.trim(),
+      estado: "recibido",
+    }]);
+
+    if (!error) {
+      setMensajeFeedback("");
+      setFeedbackEnviado(true);
+      setTimeout(() => setFeedbackEnviado(false), 3000);
+      cargarFeedbacks(userId);
+    } else {
+      alert("Error al enviar: " + error.message);
+    }
+    setEnviandoFeedback(false);
   };
 
   const guardarConfiguracion = async (e) => {
@@ -481,6 +534,90 @@ export default function ConfiguracionPage() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Sugerencias y errores */}
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <MessageSquarePlus size={15} strokeWidth={1.8} /> Sugerencias y errores
+          </CardTitle>
+          <CardDescription>¿Encontraste un error o tienes una idea para mejorar GB PRO? Contámelo acá.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <form onSubmit={enviarFeedback} className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 max-w-sm">
+              <button
+                type="button"
+                onClick={() => setTipoFeedback("sugerencia")}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all ${
+                  tipoFeedback === "sugerencia" ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                }`}
+              >
+                <Lightbulb size={14} /> Sugerencia
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipoFeedback("error")}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all ${
+                  tipoFeedback === "error" ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                }`}
+              >
+                <AlertCircle size={14} /> Error
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <Label>
+                {tipoFeedback === "error" ? "Cuéntame qué pasó y dónde" : "Cuéntame tu idea"}
+              </Label>
+              <textarea
+                required
+                value={mensajeFeedback}
+                onChange={(e) => setMensajeFeedback(e.target.value)}
+                placeholder={tipoFeedback === "error" ? "Ej: al tocar el botón de hora en la agenda no responde..." : "Ej: estaría bueno poder..."}
+                className="flex w-full min-h-[100px] rounded-md border border-input bg-muted/30 px-3 py-2 text-base resize-none"
+              />
+            </div>
+            <Button type="submit" className={`font-bold h-11 transition-all ${feedbackEnviado ? "bg-green-600 hover:bg-green-700 text-white" : ""}`} disabled={enviandoFeedback || !mensajeFeedback.trim()}>
+              {enviandoFeedback ? "Enviando..." : feedbackEnviado ? "¡Enviado!" : "Enviar"}
+            </Button>
+          </form>
+
+          {/* Historial de feedback */}
+          {misFeedbacks.length > 0 && (
+            <div className="border-t border-border/50 pt-4 space-y-2">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Lo que enviaste</p>
+              {cargandoFeedbacks ? (
+                <p className="text-sm text-muted-foreground animate-pulse">Cargando...</p>
+              ) : (
+                misFeedbacks.map((f) => {
+                  const estado = ESTADOS_FEEDBACK[f.estado] || ESTADOS_FEEDBACK.recibido;
+                  return (
+                    <div key={f.id} className="p-3 rounded-xl border border-border/50 bg-muted/10">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {f.tipo === "error" ? <AlertCircle size={13} className="text-red-500 shrink-0" /> : <Lightbulb size={13} className="text-amber-500 shrink-0" />}
+                          <span className="text-xs font-bold text-muted-foreground">{f.tipo === "error" ? "Error" : "Sugerencia"}</span>
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${estado.color}`}>{estado.label}</span>
+                      </div>
+                      <p className="text-sm mt-2">{f.mensaje}</p>
+                      {f.respuesta_admin && (
+                        <div className="mt-2 p-2 bg-zinc-950 text-white rounded-lg text-xs">
+                          <p className="font-bold mb-0.5">Respuesta:</p>
+                          <p className="text-zinc-300">{f.respuesta_admin}</p>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {new Date(f.created_at).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
