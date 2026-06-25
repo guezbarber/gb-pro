@@ -33,6 +33,7 @@ export default function DashboardPage() {
 
   // ── Turno rápido (cliente de la calle, sin agendar) ──
   const [modalRapidoAbierto, setModalRapidoAbierto] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false); // controla la animación de entrada/salida
   const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
   const [productosDisponibles, setProductosDisponibles] = useState([]);
   const [servicioRapidoId, setServicioRapidoId] = useState(null);
@@ -41,7 +42,20 @@ export default function DashboardPage() {
   const [guardandoRapido, setGuardandoRapido] = useState(false);
   const [rapidoExito, setRapidoExito] = useState(false);
 
+  // ── Estado para deslizar el modal hacia abajo (gesto tipo iPhone) ──
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef(null);
+  const sheetRef = useRef(null);
+
   useEffect(() => { loadData(); }, []);
+
+  // Cuando se abre el modal, lo montamos y en el siguiente frame
+  // disparamos la animación de entrada (sube desde abajo con rebote).
+  useEffect(() => {
+    if (modalRapidoAbierto) {
+      requestAnimationFrame(() => setModalVisible(true));
+    }
+  }, [modalRapidoAbierto]);
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -162,11 +176,38 @@ export default function DashboardPage() {
     setTimeout(() => setCopiado(false), 2000);
   };
 
+  // Cierra el modal con animación suave hacia abajo antes de desmontarlo.
   const cerrarModalRapido = () => {
-    setModalRapidoAbierto(false);
-    setServicioRapidoId(null);
-    setProductoRapidoId(null);
-    setExtraRapido("");
+    setModalVisible(false);
+    setTimeout(() => {
+      setModalRapidoAbierto(false);
+      setServicioRapidoId(null);
+      setProductoRapidoId(null);
+      setExtraRapido("");
+      setDragY(0);
+    }, 280);
+  };
+
+  // ── Gestos: deslizar el sheet hacia abajo para cerrarlo (estilo iPhone) ──
+  const onTouchStart = (e) => {
+    dragStartY.current = e.touches[0].clientY;
+  };
+
+  const onTouchMove = (e) => {
+    if (dragStartY.current === null) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    // Solo permitimos arrastrar hacia abajo (delta positivo)
+    if (delta > 0) setDragY(delta);
+  };
+
+  const onTouchEnd = () => {
+    // Si arrastró más de 110px hacia abajo, cerramos. Si no, vuelve a su lugar.
+    if (dragY > 110) {
+      cerrarModalRapido();
+    } else {
+      setDragY(0);
+    }
+    dragStartY.current = null;
   };
 
   // Registra un turno completado "ya mismo" sin pasar por la agenda —
@@ -403,29 +444,59 @@ export default function DashboardPage() {
       {/* ── BURBUJA FLOTANTE — turno rápido ── */}
       <button
         onClick={() => setModalRapidoAbierto(true)}
-        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 w-14 h-14 rounded-full bg-zinc-950 text-white shadow-xl flex items-center justify-center active:scale-90 transition-transform hover:bg-zinc-800"
+        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 w-14 h-14 rounded-full bg-zinc-950 text-white shadow-xl flex items-center justify-center active:scale-90 transition-all hover:bg-zinc-800 hover:scale-105"
         aria-label="Registrar turno rápido"
       >
         <Plus size={26} strokeWidth={2.5} />
       </button>
 
-      {/* ── MODAL — turno rápido ── */}
+      {/* ── MODAL — turno rápido (bottom sheet estilo iPhone) ── */}
       {modalRapidoAbierto && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{
+            backgroundColor: modalVisible ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)",
+            backdropFilter: modalVisible ? "blur(6px)" : "blur(0px)",
+            WebkitBackdropFilter: modalVisible ? "blur(6px)" : "blur(0px)",
+            transition: "background-color 0.3s ease, backdrop-filter 0.3s ease",
+          }}
+          onClick={cerrarModalRapido}
+        >
+          <div
+            ref={sheetRef}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-sm overflow-hidden max-h-[88vh] overflow-y-auto"
+            style={{
+              transform: modalVisible
+                ? `translateY(${dragY}px)`
+                : "translateY(100%)",
+              transition: dragStartY.current !== null
+                ? "none"
+                : "transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)",
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
+          >
+            {/* Barrita superior para arrastrar (estilo iPhone) */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1.5 rounded-full bg-zinc-300" />
+            </div>
+
             <div className="bg-zinc-950 p-6 text-white flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-black">Registro rápido</h2>
                 <p className="text-zinc-400 text-sm mt-1">Para clientes de la calle — sin agendar.</p>
               </div>
-              <button onClick={cerrarModalRapido} className="text-zinc-400 hover:text-white transition-colors">
+              <button onClick={cerrarModalRapido} className="text-zinc-400 hover:text-white transition-colors active:scale-90">
                 <X size={20} />
               </button>
             </div>
 
             {rapidoExito ? (
               <div className="p-10 flex flex-col items-center gap-3 text-center">
-                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center animate-[ping_0.5s_ease-out_1]">
                   <Check size={26} className="text-green-600" strokeWidth={2.5} />
                 </div>
                 <p className="font-bold text-lg">¡Registrado!</p>
@@ -505,7 +576,7 @@ export default function DashboardPage() {
                 </div>
 
                 <Button
-                  className="w-full h-12 font-bold text-base bg-zinc-950 hover:bg-zinc-800 text-white"
+                  className="w-full h-12 font-bold text-base bg-zinc-950 hover:bg-zinc-800 text-white active:scale-95 transition-transform"
                   disabled={!servicioRapidoId || guardandoRapido}
                   onClick={registrarTurnoRapido}
                 >
