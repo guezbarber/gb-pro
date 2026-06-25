@@ -465,11 +465,13 @@ export default function DashboardPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-sm flex flex-col max-h-[85vh]"
+            className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-sm flex flex-col sm:mb-0"
             style={{
+              maxHeight: "75vh",
+              marginBottom: "calc(5.5rem + env(safe-area-inset-bottom))",
               transform: modalVisible
                 ? `translateY(${dragY}px)`
-                : "translateY(100%)",
+                : "translateY(120%)",
               transition: arrastrando.current
                 ? "none"
                 : "transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)",
@@ -487,7 +489,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Encabezado fijo */}
-            <div className="bg-zinc-950 p-6 text-white flex items-start justify-between shrink-0 sm:rounded-t-3xl">
+            <div className="bg-zinc-950 px-6 py-5 text-white flex items-start justify-between shrink-0">
               <div>
                 <h2 className="text-xl font-black">Registro rápido</h2>
                 <p className="text-zinc-400 text-sm mt-1">Para clientes de la calle — sin agendar.</p>
@@ -508,7 +510,7 @@ export default function DashboardPage() {
             ) : (
               <>
                 {/* Contenido scrolleable */}
-                <div className="p-6 space-y-5 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: "touch" }}>
+                <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: "touch" }}>
                   {/* Servicio */}
                   <div className="space-y-2">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Servicio</p>
@@ -582,10 +584,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Botón FIJO abajo — siempre visible, nunca tapado */}
-                <div
-                  className="p-4 border-t border-border/50 bg-white shrink-0"
-                  style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
-                >
+                <div className="px-6 py-4 border-t border-border/50 bg-white shrink-0">
                   <Button
                     className="w-full h-12 font-bold text-base bg-zinc-950 hover:bg-zinc-800 text-white active:scale-95 transition-transform"
                     disabled={!servicioRapidoId || guardandoRapido}
