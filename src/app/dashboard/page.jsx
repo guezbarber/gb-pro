@@ -42,10 +42,10 @@ export default function DashboardPage() {
   const [guardandoRapido, setGuardandoRapido] = useState(false);
   const [rapidoExito, setRapidoExito] = useState(false);
 
-  // ── Estado para deslizar el modal hacia abajo (gesto tipo iPhone) ──
+  // ── Estado para deslizar el modal hacia abajo (solo desde la barrita) ──
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(null);
-  const sheetRef = useRef(null);
+  const arrastrando = useRef(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -188,26 +188,27 @@ export default function DashboardPage() {
     }, 280);
   };
 
-  // ── Gestos: deslizar el sheet hacia abajo para cerrarlo (estilo iPhone) ──
-  const onTouchStart = (e) => {
+  // ── Gestos: SOLO se arrastra desde la barrita de arriba ──
+  // Así el scroll del contenido nunca pelea con el cierre del modal.
+  const onBarraTouchStart = (e) => {
     dragStartY.current = e.touches[0].clientY;
+    arrastrando.current = true;
   };
 
-  const onTouchMove = (e) => {
-    if (dragStartY.current === null) return;
+  const onBarraTouchMove = (e) => {
+    if (!arrastrando.current || dragStartY.current === null) return;
     const delta = e.touches[0].clientY - dragStartY.current;
-    // Solo permitimos arrastrar hacia abajo (delta positivo)
     if (delta > 0) setDragY(delta);
   };
 
-  const onTouchEnd = () => {
-    // Si arrastró más de 110px hacia abajo, cerramos. Si no, vuelve a su lugar.
+  const onBarraTouchEnd = () => {
     if (dragY > 110) {
       cerrarModalRapido();
     } else {
       setDragY(0);
     }
     dragStartY.current = null;
+    arrastrando.current = false;
   };
 
   // Registra un turno completado "ya mismo" sin pasar por la agenda —
@@ -463,28 +464,30 @@ export default function DashboardPage() {
           onClick={cerrarModalRapido}
         >
           <div
-            ref={sheetRef}
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-sm overflow-hidden max-h-[88vh] overflow-y-auto"
+            className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-sm flex flex-col max-h-[85vh]"
             style={{
               transform: modalVisible
                 ? `translateY(${dragY}px)`
                 : "translateY(100%)",
-              transition: dragStartY.current !== null
+              transition: arrastrando.current
                 ? "none"
                 : "transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)",
-              paddingBottom: "env(safe-area-inset-bottom)",
             }}
           >
-            {/* Barrita superior para arrastrar (estilo iPhone) */}
-            <div className="sm:hidden flex justify-center pt-3 pb-1">
+            {/* Barrita superior para arrastrar (estilo iPhone) — SOLO aquí se arrastra */}
+            <div
+              className="sm:hidden flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing shrink-0"
+              onTouchStart={onBarraTouchStart}
+              onTouchMove={onBarraTouchMove}
+              onTouchEnd={onBarraTouchEnd}
+              style={{ touchAction: "none" }}
+            >
               <div className="w-10 h-1.5 rounded-full bg-zinc-300" />
             </div>
 
-            <div className="bg-zinc-950 p-6 text-white flex items-start justify-between">
+            {/* Encabezado fijo */}
+            <div className="bg-zinc-950 p-6 text-white flex items-start justify-between shrink-0 sm:rounded-t-3xl">
               <div>
                 <h2 className="text-xl font-black">Registro rápido</h2>
                 <p className="text-zinc-400 text-sm mt-1">Para clientes de la calle — sin agendar.</p>
@@ -503,86 +506,95 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Ya quedó sumado a tus ingresos de hoy.</p>
               </div>
             ) : (
-              <div className="p-6 space-y-5">
-                {/* Servicio */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Servicio</p>
-                  {serviciosDisponibles.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-3 bg-muted/20 rounded-lg text-center">
-                      Todavía no tienes servicios creados.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      {serviciosDisponibles.map((s) => (
+              <>
+                {/* Contenido scrolleable */}
+                <div className="p-6 space-y-5 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: "touch" }}>
+                  {/* Servicio */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Servicio</p>
+                    {serviciosDisponibles.length === 0 ? (
+                      <p className="text-sm text-muted-foreground p-3 bg-muted/20 rounded-lg text-center">
+                        Todavía no tienes servicios creados.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        {serviciosDisponibles.map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => setServicioRapidoId(s.id)}
+                            className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${
+                              servicioRapidoId === s.id ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                            }`}
+                          >
+                            <p className="font-bold text-sm leading-tight">{s.name}</p>
+                            <p className={`text-xs mt-0.5 ${servicioRapidoId === s.id ? "text-zinc-300" : "text-muted-foreground"}`}>${s.price}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Producto vendido (opcional) */}
+                  {productosDisponibles.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <ShoppingBag size={12} /> Producto vendido <span className="font-normal">(opcional)</span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
                         <button
-                          key={s.id}
-                          onClick={() => setServicioRapidoId(s.id)}
-                          className={`p-3 rounded-xl border text-left transition-all active:scale-95 ${
-                            servicioRapidoId === s.id ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                          onClick={() => setProductoRapidoId(null)}
+                          className={`p-2.5 rounded-xl border text-center text-xs font-bold transition-all active:scale-95 ${
+                            productoRapidoId === null ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
                           }`}
                         >
-                          <p className="font-bold text-sm leading-tight">{s.name}</p>
-                          <p className={`text-xs mt-0.5 ${servicioRapidoId === s.id ? "text-zinc-300" : "text-muted-foreground"}`}>${s.price}</p>
+                          Ninguno
                         </button>
-                      ))}
+                        {productosDisponibles.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => setProductoRapidoId(p.id)}
+                            className={`p-2.5 rounded-xl border text-left transition-all active:scale-95 ${
+                              productoRapidoId === p.id ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
+                            }`}
+                          >
+                            <p className="font-bold text-xs leading-tight truncate">{p.nombre}</p>
+                            <p className={`text-xs ${productoRapidoId === p.id ? "text-zinc-300" : "text-muted-foreground"}`}>${p.precio}</p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {/* Producto vendido (opcional) */}
-                {productosDisponibles.length > 0 && (
+                  {/* Extra / propina */}
                   <div className="space-y-2">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <ShoppingBag size={12} /> Producto vendido <span className="font-normal">(opcional)</span>
+                      <DollarSign size={12} /> Extra / propina <span className="font-normal">(opcional)</span>
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setProductoRapidoId(null)}
-                        className={`p-2.5 rounded-xl border text-center text-xs font-bold transition-all active:scale-95 ${
-                          productoRapidoId === null ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
-                        }`}
-                      >
-                        Ninguno
-                      </button>
-                      {productosDisponibles.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => setProductoRapidoId(p.id)}
-                          className={`p-2.5 rounded-xl border text-left transition-all active:scale-95 ${
-                            productoRapidoId === p.id ? "bg-zinc-950 text-white border-zinc-950" : "bg-muted/20 border-border/50 hover:bg-muted/40"
-                          }`}
-                        >
-                          <p className="font-bold text-xs leading-tight truncate">{p.nombre}</p>
-                          <p className={`text-xs ${productoRapidoId === p.id ? "text-zinc-300" : "text-muted-foreground"}`}>${p.precio}</p>
-                        </button>
-                      ))}
-                    </div>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={extraRapido}
+                      onChange={(e) => setExtraRapido(e.target.value)}
+                      className="w-full h-12 rounded-xl border border-input bg-muted/30 px-4 text-base font-bold"
+                    />
                   </div>
-                )}
-
-                {/* Extra / propina */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <DollarSign size={12} /> Extra / propina <span className="font-normal">(opcional)</span>
-                  </p>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={extraRapido}
-                    onChange={(e) => setExtraRapido(e.target.value)}
-                    className="w-full h-12 rounded-xl border border-input bg-muted/30 px-4 text-base font-bold"
-                  />
                 </div>
 
-                <Button
-                  className="w-full h-12 font-bold text-base bg-zinc-950 hover:bg-zinc-800 text-white active:scale-95 transition-transform"
-                  disabled={!servicioRapidoId || guardandoRapido}
-                  onClick={registrarTurnoRapido}
+                {/* Botón FIJO abajo — siempre visible, nunca tapado */}
+                <div
+                  className="p-4 border-t border-border/50 bg-white shrink-0"
+                  style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
                 >
-                  {guardandoRapido ? "Guardando..." : "Registrar"}
-                </Button>
-              </div>
+                  <Button
+                    className="w-full h-12 font-bold text-base bg-zinc-950 hover:bg-zinc-800 text-white active:scale-95 transition-transform"
+                    disabled={!servicioRapidoId || guardandoRapido}
+                    onClick={registrarTurnoRapido}
+                  >
+                    {guardandoRapido ? "Guardando..." : "Registrar"}
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </div>
