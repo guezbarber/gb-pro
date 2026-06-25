@@ -84,6 +84,11 @@ export default function DashboardLayout({ children }) {
     setMenuAbierto(false);
   }, [pathname]);
 
+  // Cierra el selector de idioma al cambiar de página
+  useEffect(() => {
+    setSelectorAbierto(false);
+  }, [pathname]);
+
   const handleCerrarSesion = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -144,7 +149,9 @@ export default function DashboardLayout({ children }) {
     });
   };
 
-  // Selector de idioma compacto — disponible en sidebar desktop y header móvil
+  // Selector de idioma compacto — disponible en sidebar desktop y header móvil.
+  // En móvil (compacto) el menú se abre HACIA ABAJO, pegado al botón.
+  // En desktop (sidebar) se abre HACIA ARRIBA porque el botón está al fondo.
   const SelectorIdioma = ({ compacto }) => (
     <div className="relative">
       <button
@@ -157,17 +164,28 @@ export default function DashboardLayout({ children }) {
         {BANDERAS[idioma]} {NOMBRES_IDIOMA[idioma]}
       </button>
       {selectorAbierto && (
-        <div className={`absolute ${compacto ? "right-0" : "left-0"} bottom-full mb-1 bg-white rounded-xl shadow-xl border border-border/50 overflow-hidden z-50 min-w-[110px]`}>
-          {Object.keys(BANDERAS).map((cod) => (
-            <button
-              key={cod}
-              onClick={() => { cambiarIdioma(cod); setSelectorAbierto(false); }}
-              className={`flex items-center gap-2 w-full px-3 py-2 text-sm font-bold text-left hover:bg-muted/30 transition-colors ${idioma === cod ? "bg-muted/20" : ""}`}
-            >
-              {BANDERAS[cod]} {NOMBRES_IDIOMA[cod]}
-            </button>
-          ))}
-        </div>
+        <>
+          {/* Capa invisible para cerrar al tocar fuera */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setSelectorAbierto(false)}
+          />
+          <div className={`absolute z-50 min-w-[110px] bg-white rounded-xl shadow-xl border border-border/50 overflow-hidden ${
+            compacto
+              ? "right-0 top-full mt-1"
+              : "left-0 bottom-full mb-1"
+          }`}>
+            {Object.keys(BANDERAS).map((cod) => (
+              <button
+                key={cod}
+                onClick={() => { cambiarIdioma(cod); setSelectorAbierto(false); }}
+                className={`flex items-center gap-2 w-full px-3 py-2 text-sm font-bold text-left hover:bg-muted/30 transition-colors ${idioma === cod ? "bg-muted/20" : ""}`}
+              >
+                {BANDERAS[cod]} {NOMBRES_IDIOMA[cod]}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
