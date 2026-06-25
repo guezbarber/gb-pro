@@ -57,6 +57,28 @@ export default function DashboardPage() {
     }
   }, [modalRapidoAbierto]);
 
+  // Bloquea el scroll del fondo mientras el modal está abierto.
+  // Guarda la posición actual y la restaura al cerrar, sin saltos.
+  useEffect(() => {
+    if (modalRapidoAbierto) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [modalRapidoAbierto]);
+
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -509,8 +531,8 @@ export default function DashboardPage() {
               </div>
             ) : (
               <>
-                {/* Contenido scrolleable */}
-                <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: "touch" }}>
+                {/* Contenido scrolleable — rebota dentro de la burbuja (overscroll contain) */}
+                <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
                   {/* Servicio */}
                   <div className="space-y-2">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Servicio</p>
