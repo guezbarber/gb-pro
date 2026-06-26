@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -58,6 +61,38 @@ const PLANES = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
+  // Mientras verificamos si hay sesión activa, mostramos una pantalla
+  // de carga limpia para que el barbero logueado no llegue a ver la landing.
+  const [verificandoSesion, setVerificandoSesion] = useState(true);
+
+  useEffect(() => {
+    const verificarSesion = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Ya hay un barbero logueado → directo al panel, sin pasar por aquí.
+        router.replace("/dashboard");
+      } else {
+        // Visitante nuevo → mostramos la landing normal.
+        setVerificandoSesion(false);
+      }
+    };
+    verificarSesion();
+  }, [router]);
+
+  // Pantalla de carga breve mientras se decide a dónde mandar al usuario.
+  if (verificandoSesion) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
+        <div className="flex items-center gap-2">
+          <Scissors size={20} className="text-white" />
+          <span className="text-white font-black text-2xl tracking-tighter">GB PRO</span>
+        </div>
+        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white font-sans">
 
