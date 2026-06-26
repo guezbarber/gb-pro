@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Star } from "lucide-react";
 
 export default function ServiciosPage() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
+  const [puntos, setPuntos] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [fidelidadActiva, setFidelidadActiva] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -23,6 +25,14 @@ export default function ServiciosPage() {
     setLoadingData(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    const { data: settings } = await supabase
+      .from("barber_settings")
+      .select("fidelidad_activa")
+      .eq("barber_id", user.id)
+      .single();
+    if (settings) setFidelidadActiva(settings.fidelidad_activa || false);
+
     const { data } = await supabase.from("services").select("*").eq("barber_id", user.id).order("name", { ascending: true });
     if (data) setServices(data);
     setLoadingData(false);
@@ -33,10 +43,11 @@ export default function ServiciosPage() {
     setName(svc.name);
     setPrice(String(svc.price));
     setDuration(String(svc.duration_minutes));
+    setPuntos(String(svc.puntos || 0));
   };
 
   const handleCancelEdit = () => {
-    setEditingId(null); setName(""); setPrice(""); setDuration("");
+    setEditingId(null); setName(""); setPrice(""); setDuration(""); setPuntos("");
   };
 
   const handleSubmit = async (e) => {
@@ -46,16 +57,18 @@ export default function ServiciosPage() {
 
     if (editingId) {
       const { error } = await supabase.from("services").update({
-        name, price: parseFloat(price), duration_minutes: parseInt(duration, 10)
+        name, price: parseFloat(price), duration_minutes: parseInt(duration, 10),
+        puntos: parseInt(puntos, 10) || 0,
       }).eq("id", editingId);
       if (error) alert("Error: " + error.message);
       else { handleCancelEdit(); loadData(); }
     } else {
       const { error } = await supabase.from("services").insert([{
-        barber_id: user.id, name, price: parseFloat(price), duration_minutes: parseInt(duration, 10)
+        barber_id: user.id, name, price: parseFloat(price), duration_minutes: parseInt(duration, 10),
+        puntos: parseInt(puntos, 10) || 0,
       }]);
       if (error) alert("Error: " + error.message);
-      else { setName(""); setPrice(""); setDuration(""); loadData(); }
+      else { setName(""); setPrice(""); setDuration(""); setPuntos(""); loadData(); }
     }
     setLoading(false);
   };
@@ -100,6 +113,24 @@ export default function ServiciosPage() {
                   <Input type="number" min="1" required placeholder="30" className="h-11" value={duration} onChange={(e) => setDuration(e.target.value)} />
                 </div>
               </div>
+
+              {/* Puntos que otorga el servicio */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Star size={13} strokeWidth={2} /> Puntos que otorga
+                </Label>
+                <Input type="number" min="0" placeholder="0" className="h-11" value={puntos} onChange={(e) => setPuntos(e.target.value)} />
+                {!fidelidadActiva ? (
+                  <p className="text-xs text-muted-foreground">
+                    El sistema de puntos está desactivado. Actívalo en Configuración → Reservas para que estos puntos se sumen.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Puntos que el cliente gana cada vez que completa este servicio.
+                  </p>
+                )}
+              </div>
+
               <Button type="submit" className="w-full font-bold h-11 mt-1" disabled={loading}>
                 {loading ? "Guardando..." : editingId ? "Guardar cambios" : "Agregar servicio"}
               </Button>
@@ -140,7 +171,14 @@ export default function ServiciosPage() {
                   >
                     <div>
                       <p className="font-bold text-base">{svc.name}</p>
-                      <p className="text-sm text-muted-foreground">{svc.duration_minutes} min</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm text-muted-foreground">{svc.duration_minutes} min</p>
+                        {fidelidadActiva && svc.puntos > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                            <Star size={10} strokeWidth={2.5} /> {svc.puntos} pts
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-black text-lg">${svc.price}</p>
