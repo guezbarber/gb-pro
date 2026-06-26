@@ -53,7 +53,7 @@ export const TRADUCCIONES = {
     "reserva.hacerOtraReserva": "Hacer otra reserva",
     "reserva.reservaTurnoOnline": "Reserva de turno online",
     "reserva.poweredBy": "Powered by",
-    "reserva.barberiaNoEncontrada": "No se encontró esta barbería. Verificá el enlace.",
+    "reserva.barberiaNoEncontrada": "No se encontró esta barbería. Verifica el enlace.",
     "reserva.cargandoBarberia": "Cargando barbería...",
 
     // ── Menú del dashboard (sidebar y nav móvil) ──
@@ -103,7 +103,7 @@ export const TRADUCCIONES = {
     "agenda.seleccionaServicio": "Selecciona un servicio",
     "agenda.fecha": "Fecha",
     "agenda.hora": "Hora",
-    "agenda.elegiServicioPrimero": "Elegí un servicio primero.",
+    "agenda.elegiServicioPrimero": "Elige un servicio primero.",
     "agenda.buscandoHorarios": "Buscando horarios...",
     "agenda.sinHorariosLibres": "Sin horarios libres ese día.",
     "agenda.confirmarTurno": "Confirmar turno",
@@ -114,7 +114,7 @@ export const TRADUCCIONES = {
     "agenda.completado": "Completado",
     "agenda.falto": "Faltó",
     "agenda.borrarTurnoConfirm": "¿Borrar este turno?",
-    "agenda.eligeHorario": "Elegí un horario.",
+    "agenda.eligeHorario": "Elige un horario.",
 
     // ── Modal venta producto ──
     "agenda.corteCompletado": "Corte completado",
