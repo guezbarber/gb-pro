@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3, MessageSquarePlus, AlertCircle, Lightbulb, Settings2, CalendarClock, Megaphone } from "lucide-react";
+import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3, MessageSquarePlus, AlertCircle, Lightbulb, Settings2, CalendarClock, Megaphone, Star } from "lucide-react";
 
 const OPCIONES_ANTELACION = [
   { valor: 0, label: "Sin restricción" },
@@ -44,6 +44,7 @@ export default function ConfiguracionPage() {
   const [notifPush, setNotifPush] = useState(true);
   const [notifEmail, setNotifEmail] = useState(true);
   const [antelacionMinutos, setAntelacionMinutos] = useState(30);
+  const [fidelidadActiva, setFidelidadActiva] = useState(false);
   const [userId, setUserId] = useState(null);
   const [userEmail, setUserEmail] = useState("");
   const [plan, setPlan] = useState("basico");
@@ -86,6 +87,7 @@ export default function ConfiguracionPage() {
       setNotifPush(data.notif_push !== false);
       setNotifEmail(data.notif_email !== false);
       setAntelacionMinutos(data.antelacion_minutos ?? 30);
+      setFidelidadActiva(data.fidelidad_activa || false);
     }
 
     try {
@@ -152,6 +154,7 @@ export default function ConfiguracionPage() {
       notif_push: notifPush,
       notif_email: notifEmail,
       antelacion_minutos: antelacionMinutos,
+      fidelidad_activa: fidelidadActiva,
     };
 
     let errorGuardado;
@@ -206,6 +209,7 @@ export default function ConfiguracionPage() {
   );
 
   const senasActivas = plan === "PRO" || plan === "BOSS";
+  const fidelidadDisponible = plan === "PRO" || plan === "BOSS";
   const pendientesFeedback = misFeedbacks.filter(f => f.estado === "recibido" || f.estado === "en_revision").length;
 
   const Toggle = ({ value, onChange }) => (
@@ -398,6 +402,55 @@ export default function ConfiguracionPage() {
       {/* ── TAB: RESERVAS ── */}
       {tabActiva === "reservas" && (
         <div className="space-y-6 animate-in fade-in">
+
+          {/* Sistema de puntos / Fidelidad */}
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Star size={15} strokeWidth={1.8} /> Sistema de puntos
+                {!fidelidadDisponible && <span className="text-xs bg-zinc-900 text-white px-2 py-0.5 rounded-full font-bold">PRO</span>}
+              </CardTitle>
+              <CardDescription>Tus clientes acumulan puntos en cada corte y los canjean por recompensas que vos creás.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {fidelidadDisponible ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
+                    <div>
+                      <p className="font-bold text-sm">
+                        {fidelidadActiva ? "Sistema de puntos activo" : "Sistema de puntos desactivado"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {fidelidadActiva
+                          ? "Tus clientes ganan puntos automáticamente al completar cada turno."
+                          : "Actívalo para empezar a premiar a tus clientes fieles."}
+                      </p>
+                    </div>
+                    <Toggle value={fidelidadActiva} onChange={setFidelidadActiva} />
+                  </div>
+                  {fidelidadActiva && (
+                    <div className="p-4 bg-zinc-950 text-white rounded-xl text-sm space-y-2">
+                      <p className="font-bold">Próximos pasos:</p>
+                      <p className="text-zinc-300 text-xs">1. En <strong>Servicios</strong>, definí cuántos puntos da cada corte.</p>
+                      <p className="text-zinc-300 text-xs">2. En <strong>Fidelidad</strong>, creá las recompensas que tus clientes podrán canjear.</p>
+                    </div>
+                  )}
+                  <div className="pt-4 border-t border-border/50">
+                    <Button onClick={guardarConfiguracion} className={`h-11 px-8 font-bold transition-all ${guardado ? "bg-green-600 hover:bg-green-700 text-white" : ""}`} disabled={saving}>
+                      {saving ? "Guardando..." : guardado ? "Guardado" : "Guardar cambios"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/50">
+                  <p className="text-sm text-muted-foreground">Disponible en el plan PRO.</p>
+                  <a href="/dashboard/suscripcion">
+                    <Button size="sm" className="font-bold shrink-0 ml-4 bg-zinc-950 text-white hover:bg-zinc-800">Ver planes</Button>
+                  </a>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Antelación de reserva */}
           <Card className="border-border/50 shadow-sm">
