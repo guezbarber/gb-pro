@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DatePickerIOS from "@/components/DatePickerIOS";
+import { Star, Gift, Check } from "lucide-react";
 import { useIdioma } from "@/hooks/useIdioma";
 
 const INTERVALO = 15;
@@ -48,6 +49,16 @@ export default function ReservaPublicaPage({ params }) {
   const [cargandoHoras, setCargandoHoras] = useState(false);
   const [errorCarga, setErrorCarga] = useState(null);
 
+  // ── Sistema de puntos (cliente) ──
+  const [fidelidadActiva, setFidelidadActiva] = useState(false);
+  const [recompensas, setRecompensas] = useState([]);
+  const [telefonoPuntos, setTelefonoPuntos] = useState("");
+  const [buscandoPuntos, setBuscandoPuntos] = useState(false);
+  const [clientePuntos, setClientePuntos] = useState(null); // { key, nombre, puntos }
+  const [puntosNoEncontrado, setPuntosNoEncontrado] = useState(false);
+  const [canjeando, setCanjeando] = useState(null);
+  const [recompensaCanjeada, setRecompensaCanjeada] = useState(null);
+
   useEffect(() => {
     if (barberId) cargarDatosBarberia();
   }, [barberId]);
@@ -79,6 +90,7 @@ export default function ReservaPublicaPage({ params }) {
     }
     setConfig(cfg);
     setPorcentajeSena(cfg.porcentaje_sena || 0);
+    setFidelidadActiva(cfg.fidelidad_activa || false);
 
     try {
       const res = await fetch(`/api/barber-email?barber_id=${barberId}`);
@@ -92,6 +104,17 @@ export default function ReservaPublicaPage({ params }) {
       .eq("barber_id", barberId)
       .order("name", { ascending: true });
     if (svcs) setServicios(svcs);
+
+    // Recompensas activas (si la fidelidad está activa)
+    if (cfg.fidelidad_activa) {
+      const { data: recs } = await supabase
+        .from("recompensas")
+        .select("*")
+        .eq("barber_id", barberId)
+        .eq("activa", true)
+        .order("costo_puntos", { ascending: true });
+      if (recs) setRecompensas(recs);
+    }
 
     const { data: bshop } = await supabase
       .from("barbershops")
@@ -223,6 +246,121 @@ export default function ReservaPublicaPage({ params }) {
         }),
       });
     } catch {}
+  };
+
+  // ── Buscar puntos del cliente por teléfono ──
+  const buscarPuntos = async () => {
+    const tel = telefonoPuntos.trim();
+    if (tel.length < 6) return;
+    setBuscandoPuntos(true);
+    setPuntosNoEncontrado(false);
+    setClientePuntos(null);
+
+    // Buscamos en client_points por client_key (que es el teléfono)
+    const { data: puntosData } = await supabase
+      .from("client_points")
+      .select("client_key, client_name, puntos")
+      .eq("barber_id", barberId)
+      .eq("client_key", tel)
+      .single();
+
+    if (puntosData) {
+      setClientePuntos({ key: puntosData.client_key, nombre: puntosData.client_name, puntos: puntosData.puntos });
+    } else {
+      // Quizás el cliente existe en turnos pero todavía sin puntos
+      const { data: turnoData } = await supabase
+        .from("appointments")
+        .select("client_name, client_email")
+        .eq("barber_id", barberId)
+        .eq("client_phone", tel)
+        .order("start_time", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (turnoData) {
+        setClientePuntos({ key: tel, nombre: turnoData.client_name, puntos: 0, email: turnoData.client_email });
+      } else {
+        setPuntosNoEncontrado(true);
+      }
+    }
+    setBuscandoPuntos(false);
+  };
+
+  // ── Canjear una recompensa ──
+  const canjearRecompensa = async (recompensa) => {
+    if (!clientePuntos || clientePuntos.puntos < recompensa.costo_puntos) return;
+    setCanjeando(recompensa.id);
+
+    const nuevosPuntos = clientePuntos.puntos - recompensa.costo_puntos;
+
+    // 1. Restamos los puntos
+    const { error: errPuntos } = await supabase.from("client_points").upsert(
+      { barber_id: barberId, client_key: clientePuntos.key, client_name: clientePuntos.nombre, puntos: nuevosPuntos },
+      { onConflict: "barber_id,client_key" }
+    );
+
+    if (errPuntos) { alert("Error: " + errPuntos.message); setCanjeando(null); return; }
+
+    // 2. Registramos el canje
+    await supabase.from("canjes").insert([{
+      barber_id: barberId,
+      client_key: clientePuntos.key,
+      client_name: clientePuntos.nombre,
+      recompensa_id: recompensa.id,
+      recompensa_nombre: recompensa.nombre,
+      costo_puntos: recompensa.costo_puntos,
+      entregado: false,
+    }]);
+
+    // 3. Buscamos el email del cliente para avisarle
+    let emailCliente = clientePuntos.email;
+    if (!emailCliente) {
+      const { data: turnoData } = await supabase
+        .from("appointments")
+        .select("client_email")
+        .eq("barber_id", barberId)
+        .eq("client_phone", clientePuntos.key)
+        .not("client_email", "is", null)
+        .order("start_time", { ascending: false })
+        .limit(1)
+        .single();
+      if (turnoData?.client_email) emailCliente = turnoData.client_email;
+    }
+
+    const barberoNombre = config.barber_name || "GB PRO";
+
+    // 4. Email al cliente (en español)
+    if (emailCliente) {
+      await enviarEmail("recompensa_canjeada", {
+        clienteEmail: emailCliente,
+        clienteNombre: clientePuntos.nombre,
+        barberoNombre,
+        recompensa: recompensa.nombre,
+        puntos: recompensa.costo_puntos,
+        puntosRestantes: nuevosPuntos,
+      });
+    }
+
+    // 5. Email + push al barbero
+    if (barberoEmail) {
+      await enviarEmail("recompensa_canjeada_barbero", {
+        barberoEmail,
+        barberoNombre,
+        clienteNombre: clientePuntos.nombre,
+        recompensa: recompensa.nombre,
+        puntos: recompensa.costo_puntos,
+      });
+    }
+    await enviarPush(
+      `Canje — ${clientePuntos.nombre}`,
+      `Canjeó: ${recompensa.nombre} (${recompensa.costo_puntos} pts)`
+    );
+
+    // 6. Actualizamos la pantalla
+    setClientePuntos(prev => ({ ...prev, puntos: nuevosPuntos }));
+    setRecompensaCanjeada(recompensa.nombre);
+    setCanjeando(null);
+    setTimeout(() => setRecompensaCanjeada(null), 5000);
   };
 
   const confirmarReserva = async (e) => {
@@ -430,6 +568,97 @@ export default function ReservaPublicaPage({ params }) {
                     </button>
                   ))}
                 </div>
+
+                {/* ── Sección Mis Puntos ── */}
+                {fidelidadActiva && (
+                  <div className="pt-4 mt-2 border-t border-border/50">
+                    {!clientePuntos ? (
+                      <div className="bg-zinc-950 text-white rounded-2xl p-5 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Star size={18} className="text-amber-400" />
+                          <p className="font-black text-base">Mis puntos</p>
+                        </div>
+                        <p className="text-zinc-400 text-sm">Ingresa tu teléfono para ver tus puntos y canjear recompensas.</p>
+                        <div className="flex gap-2">
+                          <Input
+                            type="tel"
+                            placeholder="Tu teléfono"
+                            className="h-12 text-base bg-white/10 border-white/20 text-white placeholder:text-zinc-500"
+                            value={telefonoPuntos}
+                            onChange={(e) => { setTelefonoPuntos(e.target.value); setPuntosNoEncontrado(false); }}
+                          />
+                          <Button
+                            className="h-12 px-5 font-bold bg-white text-black hover:bg-zinc-200 shrink-0"
+                            onClick={buscarPuntos}
+                            disabled={buscandoPuntos || telefonoPuntos.trim().length < 6}
+                          >
+                            {buscandoPuntos ? "..." : "Ver"}
+                          </Button>
+                        </div>
+                        {puntosNoEncontrado && (
+                          <p className="text-zinc-400 text-xs">No encontramos puntos con ese teléfono. Reserva tu primer turno para empezar a sumar.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="bg-zinc-950 text-white rounded-2xl p-5 text-center">
+                          <p className="text-zinc-400 text-sm">Hola {clientePuntos.nombre}</p>
+                          <p className="text-5xl font-black mt-1">{clientePuntos.puntos}</p>
+                          <p className="text-zinc-400 text-sm">puntos disponibles</p>
+                          <button onClick={() => { setClientePuntos(null); setTelefonoPuntos(""); }} className="text-zinc-500 text-xs mt-3 hover:text-white transition-colors">
+                            Cambiar de teléfono
+                          </button>
+                        </div>
+
+                        {recompensaCanjeada && (
+                          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                              <Check size={18} className="text-green-600" strokeWidth={2.5} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-green-800">¡Canjeaste {recompensaCanjeada}!</p>
+                              <p className="text-xs text-green-700">Mostrale este canje a tu barbero.</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {recompensas.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm font-bold text-muted-foreground">Recompensas disponibles</p>
+                            {recompensas.map((r) => {
+                              const alcanza = clientePuntos.puntos >= r.costo_puntos;
+                              return (
+                                <div key={r.id} className={`flex items-center justify-between p-4 rounded-xl border ${alcanza ? "border-border/50 bg-background" : "border-border/30 bg-muted/20 opacity-60"}`}>
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                                      <Gift size={18} className="text-amber-600" />
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-sm">{r.nombre}</p>
+                                      <p className="text-xs text-muted-foreground">{r.costo_puntos} puntos</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    className="font-bold h-10 bg-zinc-950 text-white hover:bg-zinc-800 shrink-0 disabled:opacity-40"
+                                    disabled={!alcanza || canjeando === r.id}
+                                    onClick={() => canjearRecompensa(r)}
+                                  >
+                                    {canjeando === r.id ? "..." : alcanza ? "Canjear" : "Faltan pts"}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded-xl">
+                            Todavía no hay recompensas disponibles.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -591,7 +820,7 @@ export default function ReservaPublicaPage({ params }) {
                   {email && <p className="text-sm text-muted-foreground mt-2">{t("reserva.confirmacionEnviada")} <strong>{email}</strong></p>}
                 </div>
                 <div className="flex flex-col gap-3 pt-4 max-w-xs mx-auto">
-                  <a
+                  
                     href={`https://wa.me/${config.whatsapp_number}?text=¡Hola! Acabo de agendar un turno.%0A%0A✂️ *Servicio:* ${servicioElegido?.name}%0A📅 *Día:* ${fechaElegida}%0A⏰ *Hora:* ${horaElegida}%0A👤 *Nombre:* ${nombre}${barberoElegido && tieneEquipo ? `%0A💈 *Barbero:* ${barberoElegido.name}` : ""}`}
                     target="_blank" rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-14 rounded-xl shadow-md transition-all active:scale-[0.98]"
