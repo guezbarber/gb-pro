@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,7 @@ const TABS = [
 ];
 
 export default function ConfiguracionPage() {
+  const searchParams = useSearchParams();
   const [tabActiva, setTabActiva] = useState("general");
 
   const [barberName, setBarberName] = useState("");
@@ -65,6 +67,14 @@ export default function ConfiguracionPage() {
   const [feedbackEnviado, setFeedbackEnviado] = useState(false);
   const [misFeedbacks, setMisFeedbacks] = useState([]);
   const [cargandoFeedbacks, setCargandoFeedbacks] = useState(true);
+
+  // Si llega ?tab=reservas (u otra) en la URL, abrimos esa pestaña directamente.
+  useEffect(() => {
+    const tabUrl = searchParams.get("tab");
+    if (tabUrl && TABS.some(t => t.id === tabUrl)) {
+      setTabActiva(tabUrl);
+    }
+  }, [searchParams]);
 
   useEffect(() => { cargarConfiguracion(); }, []);
 
@@ -376,14 +386,14 @@ export default function ConfiguracionPage() {
 
                 <div className="border-t border-border/50 pt-5">
                   <h3 className="font-bold text-sm mb-3">Horarios de atención</h3>
-                  <div className="grid grid-cols-2 gap-4 max-w-sm">
+                  <div className="grid grid-cols-2 gap-6 max-w-md">
                     <div className="space-y-1.5">
                       <Label>Apertura</Label>
-                      <Input type="time" required className="h-11 text-base" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+                      <Input type="time" required className="h-11 text-base w-full" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label>Cierre</Label>
-                      <Input type="time" required className="h-11 text-base" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+                      <Input type="time" required className="h-11 text-base w-full" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
                     </div>
                   </div>
                 </div>
