@@ -23,6 +23,7 @@ export async function POST(request) {
       clienteEmail, clienteNombre,
       barberoEmail, barberoNombre,
       servicio, fecha, hora, puntos,
+      recompensa, puntosRestantes,
       turnos,
       totalTurnos, totalCompletados, totalFaltaron, totalIngresos,
     } = body;
@@ -88,13 +89,32 @@ export async function POST(request) {
               <p style="font-size: 14px; color: #a1a1aa; margin: 0 0 8px 0;">Puntos ganados</p>
               <p style="font-size: 48px; font-weight: 900; margin: 0;">+${puntos}</p>
             </div>
-            <div style="background: #f4f4f5; border-radius: 12px; padding: 16px; text-align: left;">
-              <p style="font-size: 13px; color: #71717a; margin: 0 0 8px 0; font-weight: 700;">NIVELES</p>
-              <p style="font-size: 13px; margin: 4px 0;">Bronce — 0 pts</p>
-              <p style="font-size: 13px; margin: 4px 0;">Plata — 50 pts</p>
-              <p style="font-size: 13px; margin: 4px 0;">Oro — 100 pts</p>
-              <p style="font-size: 13px; margin: 4px 0;">Diamante — 200 pts</p>
+            <p style="color: #71717a; font-size: 14px;">Seguí sumando puntos en cada visita y canjealos por recompensas. ¡Gracias por tu preferencia!</p>
+          </div>
+          ${footer}
+        </div>
+      `;
+    }
+
+    if (tipo === "recompensa_canjeada") {
+      subject = `Canjeaste: ${recompensa} en ${barberoNombre}`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff;">
+          ${header}
+          <div style="padding: 32px; text-align: center;">
+            <h2 style="font-size: 26px; font-weight: 900; margin-bottom: 8px;">¡Recompensa canjeada!</h2>
+            <p style="color: #71717a; margin-bottom: 24px;">Hola <strong>${clienteNombre}</strong>, canjeaste una recompensa en <strong>${barberoNombre}</strong>.</p>
+            <div style="background: #09090b; color: white; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+              <p style="font-size: 14px; color: #a1a1aa; margin: 0 0 8px 0;">Tu recompensa</p>
+              <p style="font-size: 26px; font-weight: 900; margin: 0;">${recompensa}</p>
+              <p style="font-size: 14px; color: #a1a1aa; margin: 12px 0 0 0;">Canjeada por ${puntos} puntos</p>
             </div>
+            ${puntosRestantes !== undefined ? `
+              <div style="background: #f4f4f5; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                <p style="font-size: 13px; color: #71717a; margin: 0;">Te quedan <strong style="color: #09090b;">${puntosRestantes} puntos</strong> para seguir canjeando.</p>
+              </div>
+            ` : ""}
+            <p style="color: #71717a; font-size: 14px;">Mostrale este email a tu barbero para retirar tu recompensa.</p>
           </div>
           ${footer}
         </div>
@@ -139,6 +159,29 @@ export async function POST(request) {
               </table>
             </div>
             <a href="https://gbpro.app/dashboard/agenda" style="display: block; background: #09090b; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 700; text-decoration: none;">Ver en la agenda</a>
+          </div>
+          ${footer}
+        </div>
+      `;
+    }
+
+    if (tipo === "recompensa_canjeada_barbero") {
+      to = barberoEmail;
+      subject = `${clienteNombre} canjeó: ${recompensa}`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff;">
+          ${header}
+          <div style="padding: 32px;">
+            <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Un cliente canjeó una recompensa</h2>
+            <p style="color: #71717a; margin-bottom: 24px;"><strong>${clienteNombre}</strong> acaba de canjear puntos por una recompensa.</p>
+            <div style="background: #f4f4f5; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Cliente</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${clienteNombre}</td></tr>
+                <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Recompensa</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${recompensa}</td></tr>
+                <tr style="border-top: 1px solid #e4e4e7;"><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Costo</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${puntos} puntos</td></tr>
+              </table>
+            </div>
+            <a href="https://gbpro.app/dashboard/fidelidad" style="display: block; background: #09090b; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 700; text-decoration: none;">Ver en fidelidad</a>
           </div>
           ${footer}
         </div>
