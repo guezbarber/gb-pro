@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import WelcomeModal from "@/components/WelcomeModal";
 import DatePickerIOS from "@/components/DatePickerIOS";
-import { CalendarOff, Pencil, Check, X, RotateCcw, Trash2, ShoppingBag, Calendar } from "lucide-react";
+import { CalendarOff, Pencil, Check, X, RotateCcw, Trash2, ShoppingBag, Calendar, Star } from "lucide-react";
 import { useIdioma } from "@/hooks/useIdioma";
 
 const INTERVALO = 15;
@@ -50,6 +50,7 @@ export default function AgendaPage() {
   const [notifPush, setNotifPush] = useState(true);
   const [openTime, setOpenTime] = useState("09:00");
   const [closeTime, setCloseTime] = useState("20:00");
+  const [fidelidadActiva, setFidelidadActiva] = useState(false);
   const [horasLibres, setHorasLibres] = useState([]);
   const [cargandoHoras, setCargandoHoras] = useState(false);
   const barberoEmailRef = useRef("");
@@ -57,11 +58,13 @@ export default function AgendaPage() {
   const barberIdRef = useRef("");
   const notifEmailRef = useRef(true);
   const notifPushRef = useRef(true);
+  const fidelidadActivaRef = useRef(false);
   const busquedaTimeout = useRef(null);
 
   const [modalVenta, setModalVenta] = useState(false);
   const [turnoCompletado, setTurnoCompletado] = useState(null);
   const [vendiendo, setVendiendo] = useState(false);
+  const [puntosOtorgadosAviso, setPuntosOtorgadosAviso] = useState(null);
 
   const [modalBloqueo, setModalBloqueo] = useState(false);
   const [bloqueoFecha, setBloqueoFecha] = useState(getHoyStr());
@@ -99,7 +102,7 @@ export default function AgendaPage() {
     setBarberoEmail(user.email || "");
     barberoEmailRef.current = user.email || "";
 
-    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name, notif_email, notif_push, open_time, close_time').eq('barber_id', user.id).single();
+    const { data: settings } = await supabase.from('barber_settings').select('plan, barber_name, notif_email, notif_push, open_time, close_time, fidelidad_activa').eq('barber_id', user.id).single();
     if (settings) {
       setPlan(settings.plan || "basico");
       setBarberoNombre(settings.barber_name || "");
@@ -110,6 +113,8 @@ export default function AgendaPage() {
       notifPushRef.current = settings.notif_push !== false;
       setOpenTime(settings.open_time || "09:00");
       setCloseTime(settings.close_time || "20:00");
+      setFidelidadActiva(settings.fidelidad_activa || false);
+      fidelidadActivaRef.current = settings.fidelidad_activa || false;
     }
 
     const { data: servicesData } = await supabase.from('services').select('*').eq('barber_id', user.id);
@@ -118,7 +123,7 @@ export default function AgendaPage() {
     const { data: productosData } = await supabase.from('productos').select('*').eq('barber_id', user.id).gt('stock', 0).order('nombre', { ascending: true });
     if (productosData) setProductos(productosData);
 
-    const { data: apptsData } = await supabase.from('appointments').select('*, services(name, price, duration_minutes)').eq('barber_id', user.id).order('start_time', { ascending: true });
+    const { data: apptsData } = await supabase.from('appointments').select('*, services(name, price, duration_minutes, puntos)').eq('barber_id', user.id).order('start_time', { ascending: true });
     if (apptsData) {
       setAppointments(apptsData);
       const ahora = new Date();
@@ -312,7 +317,7 @@ export default function AgendaPage() {
     if (!error) {
       setAppointments(prev => prev.map(a => a.id === turnoEditando.id ? {
         ...a, start_time: newStartTime, service_id: editServiceId || a.service_id,
-        services: servicioSeleccionado ? { name: servicioSeleccionado.name, price: servicioSeleccionado.price, duration_minutes: servicioSeleccionado.duration_minutes } : a.services,
+        services: servicioSeleccionado ? { name: servicioSeleccionado.name, price: servicioSeleccionado.price, duration_minutes: servicioSeleccionado.duration_minutes, puntos: servicioSeleccionado.puntos } : a.services,
       } : a).sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
       if (calendarConectado && turnoEditando.google_event_id) {
         await borrarEventoCalendar(turnoEditando.id);
@@ -323,9 +328,45 @@ export default function AgendaPage() {
     setGuardandoEdicion(false);
   };
 
+  // Suma los puntos del servicio al cliente cuando se completa el turno.
+  // Solo si la fidelidad está activa, el servicio da puntos, y no se otorgaron antes.
+  const otorgarPuntosPorTurno = async (appt) => {
+    if (!fidelidadActivaRef.current) return;
+    if (appt.puntos_otorgados) return;
+    const puntosServicio = appt.services?.puntos || 0;
+    if (puntosServicio <= 0) return;
+
+    const clientKey = appt.client_phone?.trim() || appt.client_name?.trim();
+    if (!clientKey) return;
+
+    // Leemos los puntos actuales del cliente
+    const { data: actual } = await supabase
+      .from("client_points")
+      .select("puntos")
+      .eq("barber_id", barberIdRef.current)
+      .eq("client_key", clientKey)
+      .single();
+
+    const puntosPrevios = actual?.puntos || 0;
+    const nuevosPuntos = puntosPrevios + puntosServicio;
+
+    await supabase.from("client_points").upsert(
+      { barber_id: barberIdRef.current, client_key: clientKey, client_name: appt.client_name, puntos: nuevosPuntos },
+      { onConflict: "barber_id,client_key" }
+    );
+
+    // Marcamos el turno para no volver a sumar
+    await supabase.from("appointments").update({ puntos_otorgados: true }).eq("id", appt.id);
+
+    setAppointments(prev => prev.map(a => a.id === appt.id ? { ...a, puntos_otorgados: true } : a));
+    setPuntosOtorgadosAviso({ nombre: appt.client_name, puntos: puntosServicio });
+    setTimeout(() => setPuntosOtorgadosAviso(null), 3500);
+  };
+
   const handleCompletar = (appt) => {
     setTurnoCompletado(appt);
     handleCambiarStatus(appt.id, 'completado');
+    otorgarPuntosPorTurno(appt);
     if (productos.length > 0) setModalVenta(true);
   };
 
@@ -398,6 +439,14 @@ export default function AgendaPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 relative pb-20 md:pb-0">
       <WelcomeModal />
+
+      {/* Aviso flotante de puntos otorgados */}
+      {puntosOtorgadosAviso && (
+        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-zinc-950 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in slide-in-from-bottom-4">
+          <Star size={16} className="text-amber-400" strokeWidth={2.5} />
+          <p className="text-sm font-bold">+{puntosOtorgadosAviso.puntos} puntos para {puntosOtorgadosAviso.nombre}</p>
+        </div>
+      )}
 
       {modalVenta && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -662,6 +711,11 @@ export default function AgendaPage() {
                           <p className="font-bold text-base truncate">{appt.client_name}</p>
                           {status !== 'pendiente' && (
                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusStyle.badge}`}>{statusStyle.texto}</span>
+                          )}
+                          {fidelidadActiva && appt.puntos_otorgados && (
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600">
+                              <Star size={10} strokeWidth={2.5} /> +{appt.services?.puntos || 0}
+                            </span>
                           )}
                           {appt.google_event_id && <Calendar size={12} className="text-blue-400 shrink-0" />}
                         </div>
