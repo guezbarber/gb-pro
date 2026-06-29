@@ -5,7 +5,9 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Mail, Cake, FileText } from "lucide-react";
+import { MessageSquare, Mail, Cake, FileText, Clock } from "lucide-react";
+
+const DIAS_INACTIVO = 30;
 
 const formatearFecha = (isoString) => {
   const d = new Date(isoString);
@@ -26,10 +28,23 @@ const esCumpleañosHoy = (dateStr) => {
   return parseInt(mes) === hoy.getMonth() + 1 && parseInt(dia) === hoy.getDate();
 };
 
+const diasDesde = (isoString) => {
+  const ahora = new Date();
+  const fecha = new Date(isoString);
+  return Math.floor((ahora - fecha) / (1000 * 60 * 60 * 24));
+};
+
+// Mensaje de WhatsApp para reactivar (en español)
+const mensajeWhatsApp = (nombre, negocio) => {
+  const texto = `Hola ${nombre}! Te escribo de ${negocio}. Hace un tiempo que no te vemos y queríamos saber cómo andás. ¿Te gustaría agendar un turno? Te esperamos!`;
+  return encodeURIComponent(texto);
+};
+
 export default function ClientesPage() {
   const [clientes, setClientes] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
+  const [negocioNombre, setNegocioNombre] = useState("");
 
   const [notaEditando, setNotaEditando] = useState(null);
   const [textoNota, setTextoNota] = useState("");
@@ -44,6 +59,13 @@ export default function ClientesPage() {
   const cargarClientes = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    const { data: settings } = await supabase
+      .from("barber_settings")
+      .select("barber_name")
+      .eq("barber_id", user.id)
+      .single();
+    if (settings?.barber_name) setNegocioNombre(settings.barber_name);
 
     const { data: turnos } = await supabase
       .from("appointments")
@@ -117,6 +139,15 @@ export default function ClientesPage() {
     setGuardandoCumple(false);
   };
 
+  // Clientes que no vuelven: ultima visita hace mas de 30 dias
+  const clientesInactivos = clientes
+    .filter(c => diasDesde(c.ultimaVisita) >= DIAS_INACTIVO)
+    .sort((a, b) => new Date(a.ultimaVisita) - new Date(b.ultimaVisita));
+
+  const asuntoEmail = "Te extrañamos en " + (negocioNombre || "tu barbería");
+  const cuerpoEmail = (nombre) =>
+    `Hola ${nombre},%0D%0A%0D%0AHace un tiempo que no te vemos por ${negocioNombre || "el local"} y queríamos saludarte. Nos encantaría volver a atenderte.%0D%0A%0D%0A¿Te gustaría agendar un turno? Te esperamos.%0D%0A%0D%0ASaludos.`;
+
   const clientesFiltrados = clientes.filter(c =>
     c.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
     c.telefono?.includes(busqueda) ||
@@ -129,6 +160,58 @@ export default function ClientesPage() {
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Clientes</h1>
         <p className="text-muted-foreground mt-1">Tu base de datos automática.</p>
       </div>
+
+      {/* Clientes que no vuelven */}
+      {!loading && clientesInactivos.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/40 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-amber-800">
+              <Clock size={16} strokeWidth={2} /> Clientes que no vuelven ({clientesInactivos.length})
+            </CardTitle>
+            <p className="text-xs text-amber-700/80">Hace más de {DIAS_INACTIVO} días que no vienen. Escribiles para que vuelvan: el mensaje ya está listo.</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {clientesInactivos.map((cliente, idx) => (
+                <div key={idx} className="bg-background rounded-xl border border-amber-200/70 p-4 flex flex-col gap-3">
+                  <div>
+                    <p className="font-bold text-sm truncate">{cliente.nombre}</p>
+                    <p className="text-xs text-muted-foreground">{cliente.telefono || "Sin número"}</p>
+                    <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-amber-700">
+                      <Clock size={11} />
+                      <span>Hace {diasDesde(cliente.ultimaVisita)} días</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {cliente.telefono ? (
+                      <a
+                        href={`https://wa.me/${cliente.telefono.replace(/[^0-9]/g, "")}?text=${mensajeWhatsApp(cliente.nombre, negocioNombre || "tu barbería")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" className="w-full h-9 text-xs font-bold flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50">
+                          <MessageSquare size={13} /> Enviar WhatsApp
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button variant="outline" disabled className="w-full h-9 text-xs opacity-40">Sin WhatsApp</Button>
+                    )}
+                    {cliente.email ? (
+                      <a href={`mailto:${cliente.email}?subject=${encodeURIComponent(asuntoEmail)}&body=${cuerpoEmail(cliente.nombre)}`}>
+                        <Button variant="outline" className="w-full h-9 text-xs font-bold flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50">
+                          <Mail size={13} /> Enviar email
+                        </Button>
+                      </a>
+                    ) : (
+                      <Button variant="outline" disabled className="w-full h-9 text-xs opacity-30">Sin email</Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="flex flex-col gap-3 pb-4">
