@@ -42,7 +42,7 @@ export async function POST(request) {
             <p style="color: #71717a; margin-bottom: 24px;">Hola <strong>${clienteNombre}</strong>, aquí están los detalles de tu reserva:</p>
             <div style="background: #f4f4f5; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
               <table style="width: 100%; border-collapse: collapse;">
-                <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Barbería</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${barberoNombre}</td></tr>
+                <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Negocio</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${barberoNombre}</td></tr>
                 <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Servicio</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${servicio}</td></tr>
                 <tr style="border-top: 1px solid #e4e4e7;"><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Fecha</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${fecha}</td></tr>
                 <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Hora</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${hora}</td></tr>
@@ -71,6 +71,32 @@ export async function POST(request) {
               </table>
             </div>
             <p style="color: #71717a; font-size: 14px; text-align: center;">Si necesitas cancelar, avísanos antes del turno.</p>
+          </div>
+          ${footer}
+        </div>
+      `;
+    }
+
+    if (tipo === "recordatorio_30min_barbero") {
+      to = barberoEmail;
+      subject = `En 30 min: ${clienteNombre} a las ${hora}`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff;">
+          ${header}
+          <div style="padding: 32px;">
+            <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Tu próximo turno es en 30 minutos</h2>
+            <p style="color: #71717a; margin-bottom: 24px;">Hola <strong>${barberoNombre}</strong>, prepárate para recibir a tu cliente.</p>
+            <div style="background: #09090b; color: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; text-align: center;">
+              <p style="font-size: 13px; color: #a1a1aa; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 1px;">Llega a las</p>
+              <p style="font-size: 44px; font-weight: 900; margin: 0;">${hora}</p>
+            </div>
+            <div style="background: #f4f4f5; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Cliente</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${clienteNombre}</td></tr>
+                <tr><td style="padding: 8px 0; color: #71717a; font-size: 14px;">Servicio</td><td style="padding: 8px 0; font-weight: 700; text-align: right;">${servicio}</td></tr>
+              </table>
+            </div>
+            <a href="https://gbpro.app/dashboard/agenda" style="display: block; background: #09090b; color: white; text-align: center; padding: 14px; border-radius: 10px; font-weight: 700; text-decoration: none;">Ver en la agenda</a>
           </div>
           ${footer}
         </div>
