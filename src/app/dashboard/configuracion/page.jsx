@@ -386,7 +386,7 @@ export default function ConfiguracionPage() {
 
                 <div className="border-t border-border/50 pt-5">
                   <h3 className="font-bold text-sm mb-3">Horarios de atención</h3>
-                  <div className="grid grid-cols-2 gap-6 max-w-md">
+                  <div className="space-y-4 max-w-xs">
                     <div className="space-y-1.5">
                       <Label>Apertura</Label>
                       <Input type="time" required className="h-11 text-base w-full" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
