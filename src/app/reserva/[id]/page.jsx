@@ -49,12 +49,12 @@ export default function ReservaPublicaPage({ params }) {
   const [cargandoHoras, setCargandoHoras] = useState(false);
   const [errorCarga, setErrorCarga] = useState(null);
 
-  // ── Sistema de puntos (cliente) ──
+  // -- Sistema de puntos (cliente) --
   const [fidelidadActiva, setFidelidadActiva] = useState(false);
   const [recompensas, setRecompensas] = useState([]);
   const [telefonoPuntos, setTelefonoPuntos] = useState("");
   const [buscandoPuntos, setBuscandoPuntos] = useState(false);
-  const [clientePuntos, setClientePuntos] = useState(null); // { key, nombre, puntos }
+  const [clientePuntos, setClientePuntos] = useState(null);
   const [puntosNoEncontrado, setPuntosNoEncontrado] = useState(false);
   const [canjeando, setCanjeando] = useState(null);
   const [recompensaCanjeada, setRecompensaCanjeada] = useState(null);
@@ -105,7 +105,6 @@ export default function ReservaPublicaPage({ params }) {
       .order("name", { ascending: true });
     if (svcs) setServicios(svcs);
 
-    // Recompensas activas (si la fidelidad está activa)
     if (cfg.fidelidad_activa) {
       const { data: recs } = await supabase
         .from("recompensas")
@@ -248,7 +247,6 @@ export default function ReservaPublicaPage({ params }) {
     } catch {}
   };
 
-  // ── Buscar puntos del cliente por teléfono ──
   const buscarPuntos = async () => {
     const tel = telefonoPuntos.trim();
     if (tel.length < 6) return;
@@ -256,7 +254,6 @@ export default function ReservaPublicaPage({ params }) {
     setPuntosNoEncontrado(false);
     setClientePuntos(null);
 
-    // Buscamos en client_points por client_key (que es el teléfono)
     const { data: puntosData } = await supabase
       .from("client_points")
       .select("client_key, client_name, puntos")
@@ -267,7 +264,6 @@ export default function ReservaPublicaPage({ params }) {
     if (puntosData) {
       setClientePuntos({ key: puntosData.client_key, nombre: puntosData.client_name, puntos: puntosData.puntos });
     } else {
-      // Quizás el cliente existe en turnos pero todavía sin puntos
       const { data: turnoData } = await supabase
         .from("appointments")
         .select("client_name, client_email")
@@ -286,14 +282,12 @@ export default function ReservaPublicaPage({ params }) {
     setBuscandoPuntos(false);
   };
 
-  // ── Canjear una recompensa ──
   const canjearRecompensa = async (recompensa) => {
     if (!clientePuntos || clientePuntos.puntos < recompensa.costo_puntos) return;
     setCanjeando(recompensa.id);
 
     const nuevosPuntos = clientePuntos.puntos - recompensa.costo_puntos;
 
-    // 1. Restamos los puntos
     const { error: errPuntos } = await supabase.from("client_points").upsert(
       { barber_id: barberId, client_key: clientePuntos.key, client_name: clientePuntos.nombre, puntos: nuevosPuntos },
       { onConflict: "barber_id,client_key" }
@@ -301,7 +295,6 @@ export default function ReservaPublicaPage({ params }) {
 
     if (errPuntos) { alert("Error: " + errPuntos.message); setCanjeando(null); return; }
 
-    // 2. Registramos el canje
     await supabase.from("canjes").insert([{
       barber_id: barberId,
       client_key: clientePuntos.key,
@@ -312,7 +305,6 @@ export default function ReservaPublicaPage({ params }) {
       entregado: false,
     }]);
 
-    // 3. Buscamos el email del cliente para avisarle
     let emailCliente = clientePuntos.email;
     if (!emailCliente) {
       const { data: turnoData } = await supabase
@@ -329,7 +321,6 @@ export default function ReservaPublicaPage({ params }) {
 
     const barberoNombre = config.barber_name || "GB PRO";
 
-    // 4. Email al cliente (en español)
     if (emailCliente) {
       await enviarEmail("recompensa_canjeada", {
         clienteEmail: emailCliente,
@@ -341,7 +332,6 @@ export default function ReservaPublicaPage({ params }) {
       });
     }
 
-    // 5. Email + push al barbero
     if (barberoEmail) {
       await enviarEmail("recompensa_canjeada_barbero", {
         barberoEmail,
@@ -352,11 +342,10 @@ export default function ReservaPublicaPage({ params }) {
       });
     }
     await enviarPush(
-      `Canje — ${clientePuntos.nombre}`,
+      `Canje - ${clientePuntos.nombre}`,
       `Canjeó: ${recompensa.nombre} (${recompensa.costo_puntos} pts)`
     );
 
-    // 6. Actualizamos la pantalla
     setClientePuntos(prev => ({ ...prev, puntos: nuevosPuntos }));
     setRecompensaCanjeada(recompensa.nombre);
     setCanjeando(null);
@@ -417,7 +406,7 @@ export default function ReservaPublicaPage({ params }) {
       }
 
       await enviarPush(
-        `Nueva reserva — ${nombre}`,
+        `Nueva reserva - ${nombre}`,
         `${servicioElegido.name} el ${fechaElegida} a las ${horaElegida}`
       );
 
@@ -461,7 +450,6 @@ export default function ReservaPublicaPage({ params }) {
     }
   };
 
-  // Selector de idioma reutilizable — flotante arriba a la derecha del header
   const SelectorIdioma = () => (
     <div className="relative">
       <button
@@ -569,7 +557,6 @@ export default function ReservaPublicaPage({ params }) {
                   ))}
                 </div>
 
-                {/* ── Sección Mis Puntos ── */}
                 {fidelidadActiva && (
                   <div className="pt-4 mt-2 border-t border-border/50">
                     {!clientePuntos ? (
@@ -617,7 +604,7 @@ export default function ReservaPublicaPage({ params }) {
                             </div>
                             <div>
                               <p className="font-bold text-sm text-green-800">¡Canjeaste {recompensaCanjeada}!</p>
-                              <p className="text-xs text-green-700">Mostrale este canje a tu barbero.</p>
+                              <p className="text-xs text-green-700">Muestra este canje a tu barbero.</p>
                             </div>
                           </div>
                         )}
@@ -820,7 +807,7 @@ export default function ReservaPublicaPage({ params }) {
                   {email && <p className="text-sm text-muted-foreground mt-2">{t("reserva.confirmacionEnviada")} <strong>{email}</strong></p>}
                 </div>
                 <div className="flex flex-col gap-3 pt-4 max-w-xs mx-auto">
-                  
+                  <a
                     href={`https://wa.me/${config.whatsapp_number}?text=¡Hola! Acabo de agendar un turno.%0A%0A✂️ *Servicio:* ${servicioElegido?.name}%0A📅 *Día:* ${fechaElegida}%0A⏰ *Hora:* ${horaElegida}%0A👤 *Nombre:* ${nombre}${barberoElegido && tieneEquipo ? `%0A💈 *Barbero:* ${barberoElegido.name}` : ""}`}
                     target="_blank" rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-14 rounded-xl shadow-md transition-all active:scale-[0.98]"
