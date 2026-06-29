@@ -9,7 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Legend
 } from "recharts";
-import { AlertCircle, Lightbulb, MessageSquarePlus } from "lucide-react";
+import { AlertCircle, Lightbulb, MessageSquarePlus, Mail, Send } from "lucide-react";
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
@@ -33,6 +33,13 @@ export default function AdminSecretoPage() {
   const [respuestas, setRespuestas] = useState({});
   const [guardandoId, setGuardandoId] = useState(null);
 
+  // -- Email masivo --
+  const [adminEmail, setAdminEmail] = useState("");
+  const [tituloEmail, setTituloEmail] = useState("");
+  const [mensajeEmail, setMensajeEmail] = useState("");
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+  const [resultadoEnvio, setResultadoEnvio] = useState(null);
+
   useEffect(() => { cargarDatos(); }, []);
 
   const cargarDatos = async () => {
@@ -41,6 +48,7 @@ export default function AdminSecretoPage() {
       router.push("/dashboard");
       return;
     }
+    setAdminEmail(user.email);
 
     const { data } = await supabase
       .from("barber_settings")
@@ -96,6 +104,42 @@ export default function AdminSecretoPage() {
     const texto = respuestas[id];
     if (texto === undefined) return;
     await actualizarFeedback(id, { respuesta_admin: texto });
+  };
+
+  const enviarEmailMasivo = async () => {
+    if (!tituloEmail.trim() || !mensajeEmail.trim()) {
+      alert("Escribe un título y un mensaje.");
+      return;
+    }
+    const confirmar = window.confirm(`¿Enviar este correo a TODOS los barberos suscritos?\n\nTítulo: ${tituloEmail}`);
+    if (!confirmar) return;
+
+    setEnviandoEmail(true);
+    setResultadoEnvio(null);
+
+    try {
+      const res = await fetch("/api/email-masivo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: tituloEmail,
+          mensaje: mensajeEmail,
+          adminEmail,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setResultadoEnvio({ ok: true, ...data });
+        setTituloEmail("");
+        setMensajeEmail("");
+      } else {
+        setResultadoEnvio({ ok: false, error: data.error || "Error desconocido" });
+      }
+    } catch (err) {
+      setResultadoEnvio({ ok: false, error: err.message });
+    }
+    setEnviandoEmail(false);
   };
 
   const calcularCrecimiento = (data) => {
@@ -179,7 +223,7 @@ export default function AdminSecretoPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="bg-zinc-950 text-white border-none">
           <CardContent className="p-5">
-            <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">Total barberías</p>
+            <p className="text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">Total negocios</p>
             <p className="text-4xl font-black">{totalBarberias}</p>
           </CardContent>
         </Card>
@@ -208,6 +252,55 @@ export default function AdminSecretoPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email masivo a todos los usuarios */}
+      <Card className="border-border/50 bg-zinc-950 text-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-bold flex items-center gap-2">
+            <Mail size={16} strokeWidth={1.8} /> Enviar consejo / novedad a todos
+          </CardTitle>
+          <p className="text-xs text-zinc-400">Se envía a todos los barberos suscritos, paguen o no. Cada correo lleva un link para darse de baja.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Título del correo</label>
+            <input
+              type="text"
+              placeholder="Ej: Consejo de la semana"
+              value={tituloEmail}
+              onChange={(e) => setTituloEmail(e.target.value)}
+              className="w-full h-11 rounded-lg bg-white/10 border border-white/20 px-3 text-sm text-white placeholder:text-zinc-500"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Mensaje</label>
+            <textarea
+              placeholder="Escribe aquí tu mensaje. Puedes usar saltos de línea para separar párrafos."
+              value={mensajeEmail}
+              onChange={(e) => setMensajeEmail(e.target.value)}
+              rows={6}
+              className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 resize-y"
+            />
+          </div>
+
+          {resultadoEnvio && (
+            <div className={`rounded-lg p-3 text-sm ${resultadoEnvio.ok ? "bg-green-500/15 text-green-300 border border-green-500/30" : "bg-red-500/15 text-red-300 border border-red-500/30"}`}>
+              {resultadoEnvio.ok
+                ? `Enviados: ${resultadoEnvio.enviados} de ${resultadoEnvio.total}.${resultadoEnvio.fallidos ? ` Fallaron: ${resultadoEnvio.fallidos}.` : ""}`
+                : `Error: ${resultadoEnvio.error}`
+              }
+            </div>
+          )}
+
+          <Button
+            onClick={enviarEmailMasivo}
+            disabled={enviandoEmail || !tituloEmail.trim() || !mensajeEmail.trim()}
+            className="w-full h-12 font-bold bg-white text-black hover:bg-zinc-200 disabled:opacity-40"
+          >
+            {enviandoEmail ? "Enviando..." : <span className="flex items-center gap-2"><Send size={16} /> Enviar a todos</span>}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Gráficas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -239,7 +332,7 @@ export default function AdminSecretoPage() {
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold">Registros por mes</CardTitle>
-            <p className="text-xs text-muted-foreground">Nuevas barberías en los últimos 6 meses</p>
+            <p className="text-xs text-muted-foreground">Nuevos negocios en los últimos 6 meses</p>
           </CardHeader>
           <CardContent>
             {dataCrecimiento.length === 0 ? (
@@ -426,7 +519,7 @@ export default function AdminSecretoPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/50">
-                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Barbería</th>
+                  <th className="text-left py-3 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Negocio</th>
                   <th className="text-left py-3 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">WhatsApp</th>
                   <th className="text-left py-3 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Plan</th>
                   <th className="text-left py-3 px-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Recordatorio</th>
