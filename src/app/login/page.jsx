@@ -39,9 +39,10 @@ export default function LoginPage() {
         <Link href="/">
           <span className="font-black tracking-tighter text-2xl">GB PRO</span>
         </Link>
+        <p className="text-muted-foreground text-sm font-medium mt-1">Toma el control de tu negocio</p>
       </div>
 
-      <Card className="w-full max-w-md border-border/50 shadow-xl mt-8">
+      <Card className="w-full max-w-md border-border/50 shadow-xl mt-12">
         <CardContent className="p-8 space-y-6">
 
           <div className="text-center space-y-1">
