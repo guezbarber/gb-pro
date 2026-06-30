@@ -36,7 +36,7 @@ const diasDesde = (isoString) => {
 
 // Mensaje de WhatsApp para reactivar (en español)
 const mensajeWhatsApp = (nombre, negocio) => {
-  const texto = `Hola ${nombre}! Te escribo de ${negocio}. Hace un tiempo que no te vemos y queríamos saber cómo andás. ¿Te gustaría agendar un turno? Te esperamos!`;
+  const texto = `Hola ${nombre}! Te escribo de ${negocio}. Hace un tiempo que no te vemos y queríamos saber cómo andás. ¿Te gustaría agendar un turno? Te esperamos.`;
   return encodeURIComponent(texto);
 };
 
@@ -144,9 +144,9 @@ export default function ClientesPage() {
     .filter(c => diasDesde(c.ultimaVisita) >= DIAS_INACTIVO)
     .sort((a, b) => new Date(a.ultimaVisita) - new Date(b.ultimaVisita));
 
-  const asuntoEmail = "Te extrañamos en " + (negocioNombre || "tu barbería");
+  const asuntoEmail = "Te extrañamos en " + (negocioNombre || "nuestro negocio");
   const cuerpoEmail = (nombre) =>
-    `Hola ${nombre},%0D%0A%0D%0AHace un tiempo que no te vemos por ${negocioNombre || "el local"} y queríamos saludarte. Nos encantaría volver a atenderte.%0D%0A%0D%0A¿Te gustaría agendar un turno? Te esperamos.%0D%0A%0D%0ASaludos.`;
+    `Hola ${nombre},%0D%0A%0D%0AHace un tiempo que no te vemos por ${negocioNombre || "nuestro local"} y queríamos saludarte. Nos encantaría volver a atenderte.%0D%0A%0D%0A¿Te gustaría agendar un turno? Te esperamos.%0D%0A%0D%0ASaludos.`;
 
   const clientesFiltrados = clientes.filter(c =>
     c.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -185,7 +185,7 @@ export default function ClientesPage() {
                   <div className="flex flex-col gap-2">
                     {cliente.telefono ? (
                       <a
-                        href={`https://wa.me/${cliente.telefono.replace(/[^0-9]/g, "")}?text=${mensajeWhatsApp(cliente.nombre, negocioNombre || "tu barbería")}`}
+                        href={`https://wa.me/${cliente.telefono.replace(/[^0-9]/g, "")}?text=${mensajeWhatsApp(cliente.nombre, negocioNombre || "nuestro negocio")}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
