@@ -142,11 +142,11 @@ export default function MapaPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Dirección</Label>
-                <Input placeholder="Ej: Av. 18 de Julio 1234" value={direccion} onChange={(e) => setDireccion(e.target.value)} className="h-11" />
+                <Input placeholder="Dirección" value={direccion} onChange={(e) => setDireccion(e.target.value)} className="h-11" />
               </div>
               <div className="space-y-1.5">
                 <Label>Ciudad</Label>
-                <Input placeholder="Ej: Montevideo" value={ciudad} onChange={(e) => setCiudad(e.target.value)} className="h-11" />
+                <Input placeholder="Ciudad" value={ciudad} onChange={(e) => setCiudad(e.target.value)} className="h-11" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

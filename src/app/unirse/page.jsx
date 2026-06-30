@@ -132,7 +132,7 @@ export default function UnirseBarberiaPage() {
               <p className="text-xs text-muted-foreground">Tu jefe te lo tiene que dar.</p>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Ej: 508245"
+                  placeholder="Código"
                   className="h-12 text-base bg-muted/30 uppercase tracking-widest font-bold"
                   value={codigo}
                   onChange={(e) => { setCodigo(e.target.value.toUpperCase()); setBarberia(null); setErrorCodigo(""); }}
@@ -159,7 +159,7 @@ export default function UnirseBarberiaPage() {
               <div className="space-y-2">
                 <p className="font-bold text-sm">Tu nombre</p>
                 <Input
-                  placeholder="Ej: Carlos"
+                  placeholder="Tu nombre"
                   className="h-12 text-base bg-muted/30"
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}

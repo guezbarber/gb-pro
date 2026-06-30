@@ -208,7 +208,7 @@ export default function TiendaPage() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Nombre</Label>
-                <Input required placeholder="Ej: Pomada mate" className="h-11" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <Input required placeholder="Nombre del producto" className="h-11" value={nombre} onChange={(e) => setNombre(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -222,7 +222,7 @@ export default function TiendaPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Descripción <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>
-                <textarea className="w-full text-sm rounded-md border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder="Ej: Fijación fuerte..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+                <textarea className="w-full text-sm rounded-md border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder="Descripción del producto" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
               </div>
               <Button type="submit" className="w-full h-11 font-bold" disabled={guardando}>
                 {guardando ? "Guardando..." : editandoId ? "Guardar cambios" : "Agregar producto"}

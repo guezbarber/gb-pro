@@ -41,7 +41,7 @@ export default function ContactoPage() {
           <form className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nombre">Nombre completo</Label>
-              <Input id="nombre" placeholder="Ej: Mitchel" className="h-12" />
+              <Input id="nombre" placeholder="Tu nombre" className="h-12" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>

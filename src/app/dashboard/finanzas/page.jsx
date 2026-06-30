@@ -291,11 +291,11 @@ export default function FinanzasPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Descripción</Label>
-                  <Input required placeholder="Ej: Compra de pomadas" className="h-11" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+                  <Input required placeholder="Descripción" className="h-11" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Monto ($)</Label>
-                  <Input required type="number" min="0" step="any" placeholder="Ej: 500" className="h-11" value={monto} onChange={(e) => setMonto(e.target.value)} />
+                  <Input required type="number" min="0" step="any" placeholder="Monto" className="h-11" value={monto} onChange={(e) => setMonto(e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -236,7 +236,7 @@ export default function FidelidadPage() {
           <form onSubmit={guardarRecompensa} className="flex flex-col sm:flex-row gap-2 items-end">
             <div className="flex-1 space-y-1.5 w-full">
               <Label>Nombre de la recompensa</Label>
-              <Input placeholder="Ej: Corte gratis" className="h-11 text-base" value={nombreRecompensa} onChange={(e) => setNombreRecompensa(e.target.value)} />
+              <Input placeholder="Nombre de la recompensa" className="h-11 text-base" value={nombreRecompensa} onChange={(e) => setNombreRecompensa(e.target.value)} />
             </div>
             <div className="space-y-1.5 w-full sm:w-32">
               <Label>Costo (puntos)</Label>

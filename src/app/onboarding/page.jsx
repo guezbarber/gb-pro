@@ -291,7 +291,7 @@ export default function OnboardingPage() {
                     <Label>Nombre de la barbería</Label>
                     <Input
                       required autoFocus
-                      placeholder="Ej: Guezbarber"
+                      placeholder="Nombre del negocio"
                       className="h-14 text-lg"
                       value={barberName}
                       onChange={(e) => setBarberName(e.target.value)}
@@ -304,11 +304,11 @@ export default function OnboardingPage() {
                   <div className="space-y-4 animate-in slide-in-from-right-4 fade-in">
                     <div className="space-y-1.5">
                       <Label>Ciudad</Label>
-                      <Input required autoFocus placeholder="Ej: Montevideo" className="h-12 text-base" value={ciudad} onChange={(e) => setCiudad(e.target.value)} />
+                      <Input required autoFocus placeholder="Ciudad" className="h-12 text-base" value={ciudad} onChange={(e) => setCiudad(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label>Dirección <span className="text-muted-foreground font-normal text-xs">(opcional)</span></Label>
-                      <Input placeholder="Ej: Av. 18 de Julio 1234" className="h-12 text-base" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+                      <Input placeholder="Dirección" className="h-12 text-base" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                     </div>
                   </div>
                 )}
@@ -319,7 +319,7 @@ export default function OnboardingPage() {
                     <Label>Número de WhatsApp</Label>
                     <Input
                       required autoFocus type="tel"
-                      placeholder="Ej: 099123456"
+                      placeholder="Teléfono"
                       className="h-14 text-lg"
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(e.target.value)}
@@ -350,12 +350,12 @@ export default function OnboardingPage() {
                   <div className="space-y-4 animate-in slide-in-from-right-4 fade-in">
                     <div className="space-y-1.5">
                       <Label>Nombre del servicio</Label>
-                      <Input required autoFocus placeholder="Ej: Corte clásico" className="h-12 text-base" value={servicioNombre} onChange={(e) => setServicioNombre(e.target.value)} />
+                      <Input required autoFocus placeholder="Nombre del servicio" className="h-12 text-base" value={servicioNombre} onChange={(e) => setServicioNombre(e.target.value)} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label>Precio</Label>
-                        <Input required type="number" placeholder="Ej: 400" className="h-12 text-base" value={servicioPrecio} onChange={(e) => setServicioPrecio(e.target.value)} />
+                        <Input required type="number" placeholder="Precio" className="h-12 text-base" value={servicioPrecio} onChange={(e) => setServicioPrecio(e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
                         <Label>Duración (min)</Label>

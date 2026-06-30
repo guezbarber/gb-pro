@@ -188,7 +188,7 @@ export default function EquipoPage() {
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label>Nombre</Label>
-                <Input placeholder="Ej: Carlos" className="h-12 text-base bg-muted/30" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
+                <Input placeholder="Nombre" className="h-12 text-base bg-muted/30" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>Email <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>

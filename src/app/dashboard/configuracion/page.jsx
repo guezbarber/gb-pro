@@ -352,11 +352,11 @@ export default function ConfiguracionPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Nombre del negocio</Label>
-                    <Input required placeholder="Ej: Guez Barber" className="h-11 text-base" value={barberName} onChange={(e) => setBarberName(e.target.value)} />
+                    <Input required placeholder="Nombre del negocio" className="h-11 text-base" value={barberName} onChange={(e) => setBarberName(e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Número de WhatsApp</Label>
-                    <Input required type="tel" placeholder="Ej: 099123456" className="h-11 text-base" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+                    <Input required type="tel" placeholder="WhatsApp" className="h-11 text-base" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
                   </div>
                 </div>
 
@@ -706,7 +706,7 @@ export default function ConfiguracionPage() {
                     required
                     value={mensajeFeedback}
                     onChange={(e) => setMensajeFeedback(e.target.value)}
-                    placeholder={tipoFeedback === "error" ? "Ej: al tocar el botón de hora en la agenda no responde..." : "Ej: estaría bueno poder..."}
+                    placeholder={tipoFeedback === "error" ? "Describí el problema..." : "Describí tu sugerencia..."}
                     className="flex w-full min-h-[100px] rounded-md border border-input bg-muted/30 px-3 py-2 text-base resize-none"
                   />
                 </div>

@@ -266,7 +266,7 @@ export default function AdminSecretoPage() {
             <label className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Título del correo</label>
             <input
               type="text"
-              placeholder="Ej: Consejo de la semana"
+              placeholder="Título del correo"
               value={tituloEmail}
               onChange={(e) => setTituloEmail(e.target.value)}
               className="w-full h-11 rounded-lg bg-white/10 border border-white/20 px-3 text-sm text-white placeholder:text-zinc-500"

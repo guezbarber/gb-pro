@@ -265,7 +265,7 @@ export default function ClientesPage() {
                           <textarea
                             className="w-full text-sm rounded-lg border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                             rows={3}
-                            placeholder="Ej: Le gusta el fade bajo..."
+                            placeholder="Notas sobre el cliente"
                             value={textoNota}
                             onChange={(e) => setTextoNota(e.target.value)}
                           />
