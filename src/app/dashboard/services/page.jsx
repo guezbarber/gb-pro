@@ -101,7 +101,7 @@ export default function ServiciosPage() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Nombre</Label>
-                <Input required placeholder="Ej: Corte Clásico" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input required placeholder="Ej: Masaje relajante" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
