@@ -8,10 +8,10 @@ export const IDIOMA_DEFAULT = "es";
 export const TRADUCCIONES = {
   es: {
     // ── Reserva pública ──
-    "reserva.elegirBarbero": "1. Elige tu barbero",
+    "reserva.elegirBarbero": "1. Elige tu profesional",
     "reserva.elegirServicio": "1. Elige tu servicio",
-    "reserva.sinPreferencia": "Sin preferencia — cualquier barbero disponible",
-    "reserva.barbero": "Barbero",
+    "reserva.sinPreferencia": "Sin preferencia — cualquier profesional disponible",
+    "reserva.barbero": "Profesional",
     "reserva.min": "min",
     "reserva.volver": "Volver",
     "reserva.cuandoVienes": "¿Cuándo vienes?",
@@ -53,8 +53,8 @@ export const TRADUCCIONES = {
     "reserva.hacerOtraReserva": "Hacer otra reserva",
     "reserva.reservaTurnoOnline": "Reserva de turno online",
     "reserva.poweredBy": "Powered by",
-    "reserva.barberiaNoEncontrada": "No se encontró esta barbería. Verifica el enlace.",
-    "reserva.cargandoBarberia": "Cargando barbería...",
+    "reserva.barberiaNoEncontrada": "No se encontró este negocio. Verifica el enlace.",
+    "reserva.cargandoBarberia": "Cargando...",
 
     // ── Menú del dashboard (sidebar y nav móvil) ──
     "menu.panel": "Panel",
@@ -117,7 +117,7 @@ export const TRADUCCIONES = {
     "agenda.eligeHorario": "Elige un horario.",
 
     // ── Modal venta producto ──
-    "agenda.corteCompletado": "Corte completado",
+    "agenda.corteCompletado": "Turno completado",
     "agenda.vendisteProducto": "¿Le vendiste algún producto?",
     "agenda.sinProductosStock": "No hay productos con stock disponible.",
     "agenda.stock": "Stock",
@@ -142,10 +142,10 @@ export const TRADUCCIONES = {
   },
 
   en: {
-    "reserva.elegirBarbero": "1. Choose your barber",
+    "reserva.elegirBarbero": "1. Choose your professional",
     "reserva.elegirServicio": "1. Choose your service",
-    "reserva.sinPreferencia": "No preference — any available barber",
-    "reserva.barbero": "Barber",
+    "reserva.sinPreferencia": "No preference — any available professional",
+    "reserva.barbero": "Professional",
     "reserva.min": "min",
     "reserva.volver": "Back",
     "reserva.cuandoVienes": "When are you coming?",
@@ -187,8 +187,8 @@ export const TRADUCCIONES = {
     "reserva.hacerOtraReserva": "Book another appointment",
     "reserva.reservaTurnoOnline": "Online booking",
     "reserva.poweredBy": "Powered by",
-    "reserva.barberiaNoEncontrada": "This barbershop wasn't found. Check the link.",
-    "reserva.cargandoBarberia": "Loading barbershop...",
+    "reserva.barberiaNoEncontrada": "This business wasn't found. Check the link.",
+    "reserva.cargandoBarberia": "Loading...",
 
     "menu.panel": "Dashboard",
     "menu.agenda": "Calendar",
@@ -248,7 +248,7 @@ export const TRADUCCIONES = {
     "agenda.borrarTurnoConfirm": "Delete this appointment?",
     "agenda.eligeHorario": "Choose a time slot.",
 
-    "agenda.corteCompletado": "Haircut completed",
+    "agenda.corteCompletado": "Appointment completed",
     "agenda.vendisteProducto": "Did you sell any product?",
     "agenda.sinProductosStock": "No products with stock available.",
     "agenda.stock": "Stock",
@@ -271,10 +271,10 @@ export const TRADUCCIONES = {
   },
 
   pt: {
-    "reserva.elegirBarbero": "1. Escolha seu barbeiro",
+    "reserva.elegirBarbero": "1. Escolha seu profissional",
     "reserva.elegirServicio": "1. Escolha seu serviço",
-    "reserva.sinPreferencia": "Sem preferência — qualquer barbeiro disponível",
-    "reserva.barbero": "Barbeiro",
+    "reserva.sinPreferencia": "Sem preferência — qualquer profissional disponível",
+    "reserva.barbero": "Profissional",
     "reserva.min": "min",
     "reserva.volver": "Voltar",
     "reserva.cuandoVienes": "Quando você vem?",
@@ -316,8 +316,8 @@ export const TRADUCCIONES = {
     "reserva.hacerOtraReserva": "Fazer outra reserva",
     "reserva.reservaTurnoOnline": "Reserva online",
     "reserva.poweredBy": "Desenvolvido por",
-    "reserva.barberiaNoEncontrada": "Esta barbearia não foi encontrada. Verifique o link.",
-    "reserva.cargandoBarberia": "Carregando barbearia...",
+    "reserva.barberiaNoEncontrada": "Este negócio não foi encontrado. Verifique o link.",
+    "reserva.cargandoBarberia": "Carregando...",
 
     "menu.panel": "Painel",
     "menu.agenda": "Agenda",
@@ -377,7 +377,7 @@ export const TRADUCCIONES = {
     "agenda.borrarTurnoConfirm": "Excluir este horário?",
     "agenda.eligeHorario": "Escolha um horário.",
 
-    "agenda.corteCompletado": "Corte concluído",
+    "agenda.corteCompletado": "Horário concluído",
     "agenda.vendisteProducto": "Você vendeu algum produto?",
     "agenda.sinProductosStock": "Nenhum produto com estoque disponível.",
     "agenda.stock": "Estoque",
