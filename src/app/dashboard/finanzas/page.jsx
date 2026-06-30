@@ -7,10 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, Legend,
+  XAxis, YAxis, Tooltip, ResponsiveContainer
+} from "recharts";
 
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const CATEGORIAS = ["Insumos","Alquiler","Sueldos","Servicios","Equipamiento","Otros"];
+const COLORES = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 export default function FinanzasPage() {
   const [loading, setLoading] = useState(true);
@@ -21,6 +26,7 @@ export default function FinanzasPage() {
   const [ticketPromedio, setTicketPromedio] = useState(0);
   const [dataGrafica, setDataGrafica] = useState([]);
   const [dataServicios, setDataServicios] = useState([]);
+  const [dataSemana, setDataSemana] = useState([]);
   const [gastos, setGastos] = useState([]);
 
   const [descripcion, setDescripcion] = useState("");
@@ -49,20 +55,31 @@ export default function FinanzasPage() {
       for (let i = 0; i < 12; i++) etiquetas.push({ key: String(i).padStart(2,"00"), label: MESES[i] });
     }
 
-    const { data: turnos } = await supabase
-      .from("appointments")
-      .select("start_time, status, services(name, price)")
-      .eq("barber_id", user.id)
-      .gte("start_time", inicio.toISOString())
-      .order("start_time", { ascending: true });
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const hace7 = new Date(hoy);
+    hace7.setDate(hace7.getDate() - 6);
 
-    const inicioStr = inicio.toISOString().split("T")[0];
-    const { data: gastosData } = await supabase
-      .from("gastos")
-      .select("*")
-      .eq("barber_id", user.id)
-      .gte("fecha", inicioStr)
-      .order("fecha", { ascending: false });
+    const [{ data: turnos }, { data: gastosData }, { data: turnos7 }] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("start_time, status, services(name, price)")
+        .eq("barber_id", user.id)
+        .gte("start_time", inicio.toISOString())
+        .order("start_time", { ascending: true }),
+      supabase
+        .from("gastos")
+        .select("*")
+        .eq("barber_id", user.id)
+        .gte("fecha", inicio.toISOString().split("T")[0])
+        .order("fecha", { ascending: false }),
+      supabase
+        .from("appointments")
+        .select("start_time, services(price)")
+        .eq("barber_id", user.id)
+        .gte("start_time", hace7.toISOString())
+        .order("start_time", { ascending: true }),
+    ]);
 
     if (gastosData) setGastos(gastosData);
     const totalGastos = (gastosData || []).reduce((s, g) => s + (g.monto || 0), 0);
@@ -102,6 +119,22 @@ export default function FinanzasPage() {
       });
       setDataServicios(Object.values(mapaServicios).sort((a, b) => b.ingresos - a.ingresos));
     }
+
+    if (turnos7) {
+      const mapaIngresosDia = {};
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(hace7);
+        d.setDate(d.getDate() + i);
+        const key = d.toISOString().split("T")[0];
+        mapaIngresosDia[key] = { dia: DIAS[d.getDay()], ingresos: 0 };
+      }
+      turnos7.forEach(t => {
+        const key = new Date(t.start_time).toISOString().split("T")[0];
+        if (mapaIngresosDia[key]) mapaIngresosDia[key].ingresos += t.services?.price || 0;
+      });
+      setDataSemana(Object.values(mapaIngresosDia));
+    }
+
     setLoading(false);
   };
 
@@ -195,6 +228,55 @@ export default function FinanzasPage() {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold">Ingresos últimos 7 días</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+            ) : dataSemana.every(d => d.ingresos === 0) ? (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">Aún no hay ingresos esta semana</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={dataSemana} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value) => [`$${value}`, "Ingresos"]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
+                  <Bar dataKey="ingresos" fill="#09090b" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold">Servicios más pedidos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+            ) : dataServicios.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">Aún no hay turnos en este período</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={dataServicios} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="turnos">
+                    {dataServicios.map((_, index) => (
+                      <Cell key={index} fill={COLORES[index % COLORES.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [value + " turnos", name]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
+                  <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: "12px" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
