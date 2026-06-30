@@ -1,251 +1,142 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const ITEM_H = 44; // altura generosa para dedos
-const VISIBLE = 2; // items arriba y abajo del seleccionado
+const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
+const MESES = [
+  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+];
 
-function Drum({ items, initialIndex = 0, onChange }) {
-  const innerRef = useRef(null);
-  const idxRef = useRef(initialIndex);
-  const pointerStartY = useRef(0);
-  const pointerStartIdx = useRef(0);
-  const animRef = useRef(null);
-  const draggingRef = useRef(false);
-
-  const clamp = (i) => ((i % items.length) + items.length) % items.length;
-
-  const renderItems = (centerIdx, offsetPx = 0) => {
-    const inner = innerRef.current;
-    if (!inner) return;
-    inner.style.transition = "none";
-    inner.innerHTML = "";
-    for (let i = -VISIBLE; i <= VISIBLE + 1; i++) {
-      const ri = clamp(centerIdx + i);
-      const div = document.createElement("div");
-      div.style.cssText = `
-        height:${ITEM_H}px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:${i === 0 ? "22px" : "17px"};
-        font-weight:${i === 0 ? "600" : "400"};
-        color:${i === 0 ? "var(--color-text-primary)" : "var(--color-text-tertiary)"};
-        flex-shrink:0;
-        transition:none;
-        font-family:var(--font-sans);
-      `;
-      div.textContent = items[ri];
-      inner.appendChild(div);
-    }
-    inner.style.transform = `translateY(${-offsetPx}px)`;
-  };
-
-  const snapTo = (newIdx) => {
-    idxRef.current = clamp(newIdx);
-    if (innerRef.current) {
-      innerRef.current.style.transition = "transform 0.18s cubic-bezier(0.25,0.46,0.45,0.94)";
-      innerRef.current.style.transform = "translateY(0px)";
-    }
-    renderItems(idxRef.current);
-    onChange(items[idxRef.current], idxRef.current);
-  };
-
-  useEffect(() => {
-    renderItems(idxRef.current);
-    onChange(items[idxRef.current], idxRef.current);
-  }, [items]);
-
-  // Libera siempre la captura de puntero, sin importar dónde termine el gesto.
-  // Sin esto, un drag rápido que sale del tambor puede dejar el puntero
-  // "capturado" y bloquear los toques en elementos cercanos (como los
-  // botones de hora justo debajo en la agenda manual).
-  const releaseCapture = (e) => {
-    try {
-      if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      }
-    } catch {}
-  };
-
-  const onPointerDown = (e) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    draggingRef.current = true;
-    pointerStartY.current = e.clientY;
-    pointerStartIdx.current = idxRef.current;
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-  };
-
-  const onPointerMove = (e) => {
-    if (!draggingRef.current) return;
-    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-    const dy = pointerStartY.current - e.clientY;
-    const shift = Math.round(dy / ITEM_H);
-    const offset = dy % ITEM_H;
-    renderItems(clamp(pointerStartIdx.current + shift), offset);
-  };
-
-  const onPointerUp = (e) => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    const dy = pointerStartY.current - e.clientY;
-    const shift = Math.round(dy / ITEM_H);
-    snapTo(pointerStartIdx.current + shift);
-    releaseCapture(e);
-  };
-
-  const onPointerCancel = (e) => {
-    draggingRef.current = false;
-    snapTo(idxRef.current);
-    releaseCapture(e);
-  };
-
-  const onWheel = (e) => {
-    e.preventDefault();
-    snapTo(idxRef.current + (e.deltaY > 0 ? 1 : -1));
-  };
-
-  const containerH = ITEM_H * (VISIBLE * 2 + 1);
-  const selectorTop = ITEM_H * VISIBLE;
-
-  return (
-    <div
-      style={{
-        position: "relative",
-        height: `${containerH}px`,
-        overflow: "hidden",
-        cursor: "grab",
-        touchAction: "none",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-      }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      onPointerLeave={onPointerCancel}
-      onWheel={onWheel}
-    >
-      {/* Fade top */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0,
-        height: `${selectorTop}px`,
-        background: "linear-gradient(to bottom, var(--color-background-primary) 20%, transparent 100%)",
-        zIndex: 2, pointerEvents: "none",
-      }} />
-      {/* Selector highlight */}
-      <div style={{
-        position: "absolute", top: `${selectorTop}px`, left: 0, right: 0,
-        height: `${ITEM_H}px`,
-        borderTop: "0.5px solid var(--color-border-secondary)",
-        borderBottom: "0.5px solid var(--color-border-secondary)",
-        zIndex: 1, pointerEvents: "none",
-      }} />
-      {/* Fade bottom */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        height: `${selectorTop}px`,
-        background: "linear-gradient(to top, var(--color-background-primary) 20%, transparent 100%)",
-        zIndex: 2, pointerEvents: "none",
-      }} />
-      {/* Items */}
-      <div ref={innerRef} style={{ display: "flex", flexDirection: "column" }} />
-    </div>
-  );
+function parseDate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
 }
 
-// ── Componente principal exportable ──────────────────────────────────────────
-// value: "YYYY-MM-DD" string
-// onChange: (value: "YYYY-MM-DD") => void
-// minDate: "YYYY-MM-DD" (opcional, default = hoy)
-//
-// El año ya NO se muestra como selector visual. Se calcula automáticamente:
-// - Si el mes elegido es >= mes actual, se usa el año actual.
-// - Si el mes elegido es < mes actual (el usuario "dio la vuelta" al tambor
-//   hacia atrás, ej. eligió Enero estando en Noviembre), se asume el año siguiente.
+function toStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+// value: "YYYY-MM-DD" | onChange: (v: "YYYY-MM-DD") => void | minDate: "YYYY-MM-DD"
 export default function DatePickerIOS({ value, onChange, minDate }) {
   const hoy = new Date();
-  const min = minDate ? new Date(minDate + "T00:00:00") : hoy;
-  const anioBase = min.getFullYear();
-  const mesBase = min.getMonth();
+  hoy.setHours(0, 0, 0, 0);
 
-  // Calcula automáticamente el año correcto dado un mes elegido en el tambor
-  const calcularAnio = (mesElegido) => {
-    return mesElegido >= mesBase ? anioBase : anioBase + 1;
+  const min = minDate ? parseDate(minDate) : hoy;
+  min.setHours(0, 0, 0, 0);
+
+  const initial = value ? parseDate(value) : (min > hoy ? min : hoy);
+
+  const [viewYear, setViewYear] = useState(initial.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initial.getMonth());
+  const [selected, setSelected] = useState(value || toStr(initial));
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  // lunes = 0 … domingo = 6 (L M M J V S D)
+  const firstDayOfWeek = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+
+  const minMonth = min.getFullYear() * 12 + min.getMonth();
+  const curMonth = viewYear * 12 + viewMonth;
+  const canGoPrev = curMonth > minMonth;
+
+  const goPrev = () => {
+    if (!canGoPrev) return;
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
   };
 
-  // Parsear value inicial
-  const parseInitial = () => {
-    if (value) {
-      const [y, m, d] = value.split("-").map(Number);
-      return { year: y, month: m - 1, day: d };
-    }
-    return { year: hoy.getFullYear(), month: hoy.getMonth(), day: hoy.getDate() };
+  const goNext = () => {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
   };
 
-  const initial = parseInitial();
-
-  const [selYear, setSelYear] = useState(initial.year);
-  const [selMonth, setSelMonth] = useState(initial.month);
-  const [selDay, setSelDay] = useState(initial.day);
-
-  // Días del mes seleccionado
-  const daysInMonth = new Date(selYear, selMonth + 1, 0).getDate();
-  const days = Array.from({ length: daysInMonth }, (_, i) =>
-    String(i + 1).padStart(2, "0")
-  );
-
-  // Ajustar día si excede el mes
-  const safeDay = Math.min(selDay, daysInMonth);
-
-  const emit = (y, m, d) => {
-    const safe = Math.min(d, new Date(y, m + 1, 0).getDate());
-    const str = `${y}-${String(m + 1).padStart(2, "0")}-${String(safe).padStart(2, "0")}`;
+  const selectDay = (day) => {
+    const date = new Date(viewYear, viewMonth, day);
+    date.setHours(0, 0, 0, 0);
+    if (date < min) return;
+    const str = toStr(date);
+    setSelected(str);
     onChange(str);
   };
 
-  const initialMonthIdx = initial.month;
-  const initialDayIdx = initial.day - 1;
+  const isDisabled = (day) => {
+    const date = new Date(viewYear, viewMonth, day);
+    date.setHours(0, 0, 0, 0);
+    return date < min;
+  };
+
+  const isSelected = (day) => {
+    return selected === `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+
+  const isToday = (day) => {
+    return hoy.getFullYear() === viewYear && hoy.getMonth() === viewMonth && hoy.getDate() === day;
+  };
+
+  const cells = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   return (
-    <div style={{
-      background: "var(--color-background-primary)",
-      borderRadius: "var(--border-radius-lg)",
-      border: "0.5px solid var(--color-border-tertiary)",
-      padding: "0 8px",
-      overflow: "hidden",
-    }}>
-      <div style={{ display: "flex", gap: 0 }}>
-        {/* Día */}
-        <div style={{ flex: 1 }}>
-          <Drum
-            key={`day-${selMonth}-${selYear}`}
-            items={days}
-            initialIndex={Math.min(initialDayIdx, days.length - 1)}
-            onChange={(val, idx) => {
-              setSelDay(idx + 1);
-              emit(selYear, selMonth, idx + 1);
-            }}
-          />
-        </div>
+    <div className="bg-background rounded-2xl border border-border/40 p-4 select-none">
+      {/* Header: mes y flechas */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={goPrev}
+          disabled={!canGoPrev}
+          className="w-8 h-8 flex items-center justify-center rounded-full transition-colors disabled:opacity-20 hover:bg-muted active:scale-95"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-bold tracking-wide">
+          {MESES[viewMonth]} {viewYear}
+        </span>
+        <button
+          onClick={goNext}
+          className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-muted active:scale-95"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
 
-        {/* Separador */}
-        <div style={{ display:"flex", alignItems:"center", padding:"0 4px", color:"var(--color-text-tertiary)", fontSize:"18px" }}>/</div>
+      {/* Encabezado días de la semana */}
+      <div className="grid grid-cols-7 mb-1">
+        {DIAS_SEMANA.map((d, i) => (
+          <div key={i} className="text-center text-[11px] font-semibold text-muted-foreground py-1">
+            {d}
+          </div>
+        ))}
+      </div>
 
-        {/* Mes — al cambiar, recalcula el año automáticamente */}
-        <div style={{ flex: 1.4 }}>
-          <Drum
-            items={MESES}
-            initialIndex={initialMonthIdx}
-            onChange={(val, idx) => {
-              const nuevoAnio = calcularAnio(idx);
-              setSelMonth(idx);
-              setSelYear(nuevoAnio);
-              emit(nuevoAnio, idx, safeDay);
-            }}
-          />
-        </div>
+      {/* Grilla de días */}
+      <div className="grid grid-cols-7 gap-y-1">
+        {cells.map((day, i) => {
+          if (day === null) return <div key={`empty-${i}`} />;
+          const disabled = isDisabled(day);
+          const sel = isSelected(day);
+          const today = isToday(day);
+          return (
+            <button
+              key={day}
+              onClick={() => selectDay(day)}
+              disabled={disabled}
+              className={[
+                "mx-auto w-9 h-9 flex items-center justify-center rounded-xl text-sm font-medium transition-colors",
+                sel
+                  ? "bg-foreground text-background font-bold"
+                  : today
+                  ? "border border-foreground/30 text-foreground hover:bg-muted"
+                  : disabled
+                  ? "text-muted-foreground/30 cursor-not-allowed"
+                  : "text-foreground hover:bg-muted active:scale-95",
+              ].join(" ")}
+            >
+              {day}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
