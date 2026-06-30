@@ -13,7 +13,7 @@ export default function TerminosPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-black uppercase tracking-wider">1. Descripción del servicio</h2>
-        <p>GB PRO es un software de gestión para barberías (SaaS) que permite a profesionales del sector administrar turnos, clientes, finanzas y marketing. También ofrece a los clientes finales una interfaz para reservar turnos online.</p>
+        <p>GB PRO es un software de gestión para barberías y peluquerías (SaaS) que permite a profesionales del sector administrar turnos, clientes, finanzas y marketing. También ofrece a los clientes finales una interfaz para reservar turnos online.</p>
         <p>El servicio se presta bajo dos modalidades:</p>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li><strong className="text-foreground">Plan Básico (gratuito):</strong> hasta 50 turnos por mes con funciones esenciales.</li>
@@ -23,7 +23,7 @@ export default function TerminosPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-black uppercase tracking-wider">2. Registro y cuenta</h2>
-        <p>Para usar GB PRO como barbero debés crear una cuenta con un email válido. Sos responsable de mantener la confidencialidad de tu contraseña y de todas las acciones realizadas desde tu cuenta. Notificá inmediatamente a <strong>soporte@gbpro.app</strong> si detectás un acceso no autorizado.</p>
+        <p>Para usar GB PRO como profesional debés crear una cuenta con un email válido. Sos responsable de mantener la confidencialidad de tu contraseña y de todas las acciones realizadas desde tu cuenta. Notificá inmediatamente a <strong>soporte@gbpro.app</strong> si detectás un acceso no autorizado.</p>
         <p>Debés ser mayor de 18 años para registrarte. Al crear una cuenta declarás que la información proporcionada es verídica y actualizada.</p>
       </section>
 

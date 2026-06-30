@@ -66,7 +66,7 @@ export default function MapaPage() {
       <div className="max-w-3xl mx-auto space-y-6 pb-12">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Mapa VIP</h1>
-          <p className="text-muted-foreground mt-1">Aparece en el mapa donde los clientes buscan barberos.</p>
+          <p className="text-muted-foreground mt-1">Aparece en el mapa donde los clientes buscan profesionales cerca.</p>
         </div>
         <Card className="border-none shadow-2xl bg-zinc-950 text-white overflow-hidden">
           <CardContent className="p-8 md:p-12 text-center space-y-6">
@@ -75,12 +75,12 @@ export default function MapaPage() {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-black">Hazte visible en tu ciudad</h2>
-              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">Con el plan PRO apareces en el mapa público de GB PRO donde los clientes buscan barberos cerca.</p>
+              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">Con el plan PRO apareces en el mapa público de GB PRO donde los clientes buscan negocios cerca.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-lg mx-auto">
               {[
                 { title: "Visible en el mapa", desc: "Clientes te encuentran por ubicación" },
-                { title: "Perfil destacado", desc: "Tu barbería aparece primero" },
+                { title: "Perfil destacado", desc: "Tu negocio aparece primero" },
                 { title: "Reservas directas", desc: "Los clientes agendan desde el mapa" },
               ].map((item, i) => (
                 <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/10">

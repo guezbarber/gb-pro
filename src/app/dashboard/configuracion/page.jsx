@@ -289,7 +289,7 @@ export default function ConfiguracionPage() {
                 <div className="flex items-center justify-between p-4 bg-zinc-950 text-white rounded-xl">
                   <div>
                     <p className="font-bold text-sm">En el plan básico tu enlace muestra "GB PRO"</p>
-                    <p className="text-xs text-zinc-400 mt-0.5">Actualiza a PRO para mostrar el nombre de tu barbería.</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">Actualiza a PRO para mostrar el nombre de tu negocio.</p>
                   </div>
                   <a href="/dashboard/suscripcion">
                     <Button size="sm" className="bg-white text-black hover:bg-zinc-200 font-bold shrink-0 ml-4">Ver planes</Button>
@@ -351,7 +351,7 @@ export default function ConfiguracionPage() {
               <form onSubmit={guardarConfiguracion} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label>Nombre de la barbería</Label>
+                    <Label>Nombre del negocio</Label>
                     <Input required placeholder="Ej: Guez Barber" className="h-11 text-base" value={barberName} onChange={(e) => setBarberName(e.target.value)} />
                   </div>
                   <div className="space-y-1.5">

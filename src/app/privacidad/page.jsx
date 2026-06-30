@@ -8,16 +8,16 @@ export default function PrivacidadPage() {
       </div>
 
       <p>
-        En <strong>GB PRO</strong>, operado por <strong>Mitchel</strong> (Montevideo, Uruguay), nos tomamos tu privacidad en serio. Esta política explica qué datos recopilamos, cómo los usamos y cuáles son tus derechos. Aplica tanto a los barberos que usan la plataforma como a los clientes finales que reservan turnos.
+        En <strong>GB PRO</strong>, operado por <strong>Mitchel</strong> (Montevideo, Uruguay), nos tomamos tu privacidad en serio. Esta política explica qué datos recopilamos, cómo los usamos y cuáles son tus derechos. Aplica tanto a los profesionales que usan la plataforma como a los clientes finales que reservan turnos.
       </p>
 
       <section className="space-y-3">
         <h2 className="text-base font-black uppercase tracking-wider">1. Datos que recopilamos</h2>
 
-        <p className="font-bold">De los barberos (usuarios registrados):</p>
+        <p className="font-bold">De los profesionales (usuarios registrados):</p>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li>Email y contraseña (para autenticación)</li>
-          <li>Nombre de la barbería, número de WhatsApp, horarios</li>
+          <li>Nombre del negocio, número de WhatsApp, horarios</li>
           <li>Ubicación GPS (solo si activás el Mapa VIP voluntariamente)</li>
           <li>Datos de pago procesados por MercadoPago (no los almacenamos directamente)</li>
           <li>Tokens de Google Calendar (si conectás tu calendario)</li>
@@ -46,7 +46,7 @@ export default function PrivacidadPage() {
           <li>Enviar notificaciones push si las activaste</li>
           <li>Procesar pagos y gestionar suscripciones</li>
           <li>Sincronizar turnos con Google Calendar (si lo activaste)</li>
-          <li>Mostrar tu barbería en el mapa público (solo si lo activaste)</li>
+          <li>Mostrar tu negocio en el mapa público (solo si lo activaste)</li>
           <li>Cumplir obligaciones legales</li>
         </ul>
         <p>No vendemos, alquilamos ni compartimos tus datos personales con terceros para fines publicitarios.</p>
@@ -72,7 +72,7 @@ export default function PrivacidadPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-black uppercase tracking-wider">5. Ubicación GPS</h2>
-        <p>La ubicación de tu barbería solo se recopila si vos activás voluntariamente la función <strong>Mapa VIP</strong> en Configuración. Podés desactivarla en cualquier momento y tu ubicación dejará de mostrarse en el mapa público. No rastreamos tu ubicación en tiempo real.</p>
+        <p>La ubicación de tu negocio solo se recopila si vos activás voluntariamente la función <strong>Mapa VIP</strong> en Configuración. Podés desactivarla en cualquier momento y tu ubicación dejará de mostrarse en el mapa público. No rastreamos tu ubicación en tiempo real.</p>
       </section>
 
       <section className="space-y-3">
@@ -86,7 +86,7 @@ export default function PrivacidadPage() {
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
           <li>Comunicaciones cifradas con TLS/HTTPS</li>
           <li>Contraseñas almacenadas con hash seguro (bcrypt)</li>
-          <li>Row Level Security (RLS) en base de datos — cada barbero solo ve sus propios datos</li>
+          <li>Row Level Security (RLS) en base de datos — cada usuario solo ve sus propios datos</li>
           <li>Tokens de acceso con expiración automática</li>
           <li>Acceso a producción restringido a personal autorizado</li>
         </ul>

@@ -301,7 +301,7 @@ export default function DashboardPage() {
 
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Panel</h1>
-          <p className="text-muted-foreground mt-1">Resumen de tu barbería.</p>
+          <p className="text-muted-foreground mt-1">Resumen de tu negocio.</p>
         </div>
 
         {/* Enlace de reservas — limpio y directo */}
@@ -355,8 +355,8 @@ export default function DashboardPage() {
                 <div className="text-center py-8 text-muted-foreground text-sm animate-pulse">Cargando equipo...</div>
               ) : equipo.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-xl space-y-3">
-                  <p className="font-bold">Aún no tienes barberos en el equipo</p>
-                  <a href="/dashboard/equipo"><Button size="sm" className="font-bold bg-zinc-950 text-white hover:bg-zinc-800">Agregar barbero</Button></a>
+                  <p className="font-bold">Aún no tienes profesionales en el equipo</p>
+                  <a href="/dashboard/equipo"><Button size="sm" className="font-bold bg-zinc-950 text-white hover:bg-zinc-800">Agregar profesional</Button></a>
                 </div>
               ) : (
                 <div className="space-y-3">

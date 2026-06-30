@@ -42,7 +42,7 @@ export default function FidelidadPage() {
     const { data: settings } = await supabase.from("barber_settings").select("plan, barber_name, fidelidad_activa").eq("barber_id", user.id).single();
     if (settings) {
       setPlan(settings.plan || "basico");
-      setBarberoNombre(settings.barber_name || "Tu barbería");
+      setBarberoNombre(settings.barber_name || "Tu negocio");
       setFidelidadActiva(settings.fidelidad_activa || false);
     }
 

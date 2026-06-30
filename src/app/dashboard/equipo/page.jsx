@@ -107,7 +107,7 @@ export default function EquipoPage() {
 
   const agregarBarbero = async () => {
     if (!nuevoNombre.trim()) return;
-    if (equipo.filter(m => m.activo).length >= LIMITE_BARBEROS_PRO) { alert(`El plan BOSS permite hasta ${LIMITE_BARBEROS_PRO} barberos.`); return; }
+    if (equipo.filter(m => m.activo).length >= LIMITE_BARBEROS_PRO) { alert(`El plan BOSS permite hasta ${LIMITE_BARBEROS_PRO} profesionales.`); return; }
     setGuardando(true);
     const { error } = await supabase.from("barbers").insert([{ barbershop_id: barbershopId, name: nuevoNombre.trim(), email: nuevoEmail.trim() || null, rol: "barber", tipo: "empleado", atiende_clientes: nuevoAtiende, activo: true, color: nuevoColor }]);
     if (!error) { setModalAgregar(false); setNuevoNombre(""); setNuevoEmail(""); setNuevoColor("#2563eb"); setNuevoAtiende(true); cargarEquipo(barbershopId); }
@@ -139,7 +139,7 @@ export default function EquipoPage() {
       <div className="max-w-3xl mx-auto space-y-6 pb-12">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Mi Equipo</h1>
-          <p className="text-muted-foreground mt-1">Gestiona los barberos de tu local.</p>
+          <p className="text-muted-foreground mt-1">Gestiona los profesionales de tu local.</p>
         </div>
         <Card className="border-none shadow-2xl bg-zinc-950 text-white overflow-hidden">
           <CardContent className="p-8 md:p-12 text-center space-y-6">
@@ -148,12 +148,12 @@ export default function EquipoPage() {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-black">Gestiona tu equipo completo</h2>
-              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">Con el plan BOSS podés agregar hasta 5 barberos, ver el rendimiento de cada uno y controlar todo desde un solo panel.</p>
+              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">Con el plan BOSS podés agregar hasta 5 profesionales, ver el rendimiento de cada uno y controlar todo desde un solo panel.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-lg mx-auto">
               {[
-                { title: "Hasta 5 barberos", desc: "Cada uno con su propio acceso" },
-                { title: "Estadísticas por barbero", desc: "Turnos e ingresos individuales" },
+                { title: "Hasta 5 profesionales", desc: "Cada uno con su propio acceso" },
+                { title: "Estadísticas por profesional", desc: "Turnos e ingresos individuales" },
                 { title: "Control total", desc: "Aprobar, activar, desactivar" },
               ].map((item, i) => (
                 <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/10">
@@ -182,8 +182,8 @@ export default function EquipoPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden">
             <div className="bg-zinc-950 p-6 text-white">
-              <h2 className="text-xl font-black">Agregar barbero</h2>
-              <p className="text-zinc-400 text-sm mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} barberos activos</p>
+              <h2 className="text-xl font-black">Agregar profesional</h2>
+              <p className="text-zinc-400 text-sm mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} profesionales activos</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
@@ -225,7 +225,7 @@ export default function EquipoPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Mi Equipo</h1>
-          <p className="text-muted-foreground mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} barberos activos</p>
+          <p className="text-muted-foreground mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} profesionales activos</p>
         </div>
         <span className="bg-zinc-950 text-white text-xs font-black px-3 py-1 rounded-full">BOSS</span>
       </div>
@@ -233,8 +233,8 @@ export default function EquipoPage() {
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="font-bold text-sm">Código de tu barbería</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Comparte este código con tus barberos para que puedan unirse.</p>
+            <p className="font-bold text-sm">Código de tu negocio</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Comparte este código con tu equipo para que puedan unirse.</p>
           </div>
           <div className="flex items-center gap-3">
             <span className="font-black text-2xl tracking-widest">{codigoBarberia}</span>
@@ -250,7 +250,7 @@ export default function EquipoPage() {
               Solicitudes pendientes
               <span className="bg-amber-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{solicitudes.length}</span>
             </CardTitle>
-            <CardDescription className="text-xs">Estos barberos quieren unirse a tu equipo.</CardDescription>
+            <CardDescription className="text-xs">Estos profesionales quieren unirse a tu equipo.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {solicitudes.map((s) => (
@@ -271,7 +271,7 @@ export default function EquipoPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Barberos activos", value: barberosActivos.length },
+          { label: "Profesionales activos", value: barberosActivos.length },
           { label: "Turnos hoy", value: equipo.reduce((s, m) => s + m.turnosHoy, 0) },
           { label: "Turnos este mes", value: equipo.reduce((s, m) => s + m.turnosMes, 0) },
           { label: "Ingresos este mes", value: `$${equipo.reduce((s, m) => s + m.ingresosMes, 0)}` },
@@ -288,8 +288,8 @@ export default function EquipoPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
-            <CardTitle className="text-base font-bold">Barberos</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Toca un barbero para editar sus datos.</CardDescription>
+            <CardTitle className="text-base font-bold">Profesionales</CardTitle>
+            <CardDescription className="text-xs mt-0.5">Toca un profesional para editar sus datos.</CardDescription>
           </div>
           {puedeAgregarMas && (
             <Button size="sm" className="font-bold h-9 bg-zinc-950 text-white hover:bg-zinc-800" onClick={() => setModalAgregar(true)}>+ Agregar</Button>
@@ -299,7 +299,7 @@ export default function EquipoPage() {
           {loadingEquipo ? (
             <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">Cargando equipo...</div>
           ) : equipo.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay barberos todavía.</div>
+            <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay profesionales todavía.</div>
           ) : (
             <div className="space-y-3">
               {equipo.map((miembro) => (
@@ -369,8 +369,8 @@ export default function EquipoPage() {
 
       {!puedeAgregarMas && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-          <p className="font-bold text-amber-800">Límite de barberos alcanzado</p>
-          <p className="text-amber-700 mt-0.5">El plan BOSS permite hasta {LIMITE_BARBEROS_PRO} barberos activos.</p>
+          <p className="font-bold text-amber-800">Límite de profesionales alcanzado</p>
+          <p className="text-amber-700 mt-0.5">El plan BOSS permite hasta {LIMITE_BARBEROS_PRO} profesionales activos.</p>
         </div>
       )}
     </div>
