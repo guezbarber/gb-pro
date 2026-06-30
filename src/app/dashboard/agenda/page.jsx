@@ -339,7 +339,6 @@ export default function AgendaPage() {
     const clientKey = appt.client_phone?.trim() || appt.client_name?.trim();
     if (!clientKey) return;
 
-    // Leemos los puntos actuales del cliente
     const { data: actual } = await supabase
       .from("client_points")
       .select("puntos")
@@ -355,7 +354,6 @@ export default function AgendaPage() {
       { onConflict: "barber_id,client_key" }
     );
 
-    // Marcamos el turno para no volver a sumar
     await supabase.from("appointments").update({ puntos_otorgados: true }).eq("id", appt.id);
 
     setAppointments(prev => prev.map(a => a.id === appt.id ? { ...a, puntos_otorgados: true } : a));
@@ -425,8 +423,6 @@ export default function AgendaPage() {
     setGuardandoBloqueo(false);
   };
 
-  const turnosHoy = appointments.filter(appt => esHoyLocal(appt.start_time));
-  const ingresosHoy = turnosHoy.filter(a => a.status !== 'falto').reduce((total, appt) => total + (appt.services?.price || 0), 0);
   const limiteAlcanzado = plan === "basico" && turnosMes >= LIMITE_BASICO;
   const turnosRestantes = Math.max(0, LIMITE_BASICO - turnosMes);
 
@@ -440,7 +436,6 @@ export default function AgendaPage() {
     <div className="max-w-5xl mx-auto space-y-6 relative pb-20 md:pb-0">
       <WelcomeModal />
 
-      {/* Aviso flotante de puntos otorgados */}
       {puntosOtorgadosAviso && (
         <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-zinc-950 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in slide-in-from-bottom-4">
           <Star size={16} className="text-amber-400" strokeWidth={2.5} />
@@ -564,14 +559,23 @@ export default function AgendaPage() {
         </div>
       )}
 
-      <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("agenda.titulo")}</h1>
-        {calendarConectado && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <Calendar size={12} className="text-green-600" />
-            <span className="text-xs font-medium text-green-600">{t("agenda.googleCalendarActivo")}</span>
-          </div>
-        )}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("agenda.titulo")}</h1>
+          {calendarConectado && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <Calendar size={12} className="text-green-600" />
+              <span className="text-xs font-medium text-green-600">{t("agenda.googleCalendarActivo")}</span>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => setModalBloqueo(true)}
+          className="shrink-0 flex items-center gap-2 border-2 border-dashed rounded-xl px-4 py-2.5 text-sm font-bold text-muted-foreground hover:bg-muted/50 active:bg-muted/70 transition-colors"
+        >
+          <CalendarOff size={16} />
+          {t("agenda.bloquearHorario")}
+        </button>
       </div>
 
       {plan === "basico" && (
@@ -596,26 +600,6 @@ export default function AgendaPage() {
           </a>
         </div>
       )}
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-        <Card className="bg-zinc-900 border-none text-white">
-          <CardContent className="p-4 md:p-5">
-            <p className="text-zinc-400 text-xs font-semibold mb-1 uppercase tracking-wider">{t("agenda.turnosHoy")}</p>
-            <p className="text-3xl md:text-4xl font-black">{turnosHoy.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-none text-white">
-          <CardContent className="p-4 md:p-5">
-            <p className="text-zinc-400 text-xs font-semibold mb-1 uppercase tracking-wider">{t("agenda.ingresosHoy")}</p>
-            <p className="text-3xl md:text-4xl font-black">${ingresosHoy}</p>
-          </CardContent>
-        </Card>
-        <button onClick={() => setModalBloqueo(true)} className="col-span-2 md:col-span-1 border-dashed border-2 bg-muted/20 rounded-xl flex flex-col items-center justify-center p-4 hover:bg-muted/50 active:bg-muted/70 transition-colors">
-          <CalendarOff size={20} className="mb-1.5 text-muted-foreground" />
-          <p className="font-bold text-sm">{t("agenda.bloquearHorario")}</p>
-          <p className="text-xs text-muted-foreground">{t("agenda.paraDescansos")}</p>
-        </button>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border-border/50 shadow-sm h-fit">
