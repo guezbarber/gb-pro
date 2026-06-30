@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3, MessageSquarePlus, AlertCircle, Lightbulb, Settings2, CalendarClock, Megaphone, Star } from "lucide-react";
+import { Check, X, Calendar, Link2, Bell, Mail, Smartphone, Info, Clock3, MessageSquarePlus, AlertCircle, Lightbulb, Settings2, CalendarClock, Megaphone, Star, Globe, Sun } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const OPCIONES_ANTELACION = [
   { valor: 0, label: "Sin restricción" },
@@ -52,6 +53,9 @@ export default function ConfiguracionPage() {
   const [plan, setPlan] = useState("basico");
   const [tooltipPush, setTooltipPush] = useState(false);
   const [tooltipEmail, setTooltipEmail] = useState(false);
+  const [tema, setTema] = useState("auto");
+
+  const { idioma, cambiarIdioma } = useIdioma();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,6 +81,24 @@ export default function ConfiguracionPage() {
   }, [searchParams]);
 
   useEffect(() => { cargarConfiguracion(); }, []);
+
+  useEffect(() => {
+    const guardado = localStorage.getItem("gbpro_tema");
+    if (guardado) { setTema(guardado); aplicarClaseTema(guardado); }
+  }, []);
+
+  const aplicarClaseTema = (t) => {
+    const html = document.documentElement;
+    if (t === "claro") { html.classList.remove("dark"); html.classList.add("light"); }
+    else if (t === "oscuro") { html.classList.remove("light"); html.classList.add("dark"); }
+    else { html.classList.remove("light", "dark"); }
+  };
+
+  const cambiarTema = (t) => {
+    setTema(t);
+    localStorage.setItem("gbpro_tema", t);
+    aplicarClaseTema(t);
+  };
 
   const cargarConfiguracion = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -296,6 +318,58 @@ export default function ConfiguracionPage() {
                   </a>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Idioma */}
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Globe size={15} strokeWidth={1.8} /> Idioma
+              </CardTitle>
+              <CardDescription>Idioma de la interfaz de reservas pública.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 flex-wrap">
+                {[{ valor: "es", label: "Español" }, { valor: "en", label: "English" }, { valor: "pt", label: "Português" }].map((op) => (
+                  <button
+                    key={op.valor}
+                    type="button"
+                    onClick={() => cambiarIdioma(op.valor)}
+                    className={`px-4 py-2 rounded-xl border text-sm font-bold transition-all ${
+                      idioma === op.valor ? "bg-zinc-950 text-white border-zinc-950" : "bg-transparent border-border/50 hover:bg-muted/40"
+                    }`}
+                  >
+                    {op.label}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Apariencia */}
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Sun size={15} strokeWidth={1.8} /> Apariencia
+              </CardTitle>
+              <CardDescription>Tema visual del dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 flex-wrap">
+                {[{ valor: "claro", label: "Claro" }, { valor: "oscuro", label: "Oscuro" }, { valor: "auto", label: "Automático" }].map((op) => (
+                  <button
+                    key={op.valor}
+                    type="button"
+                    onClick={() => cambiarTema(op.valor)}
+                    className={`px-4 py-2 rounded-xl border text-sm font-bold transition-all ${
+                      tema === op.valor ? "bg-zinc-950 text-white border-zinc-950" : "bg-transparent border-border/50 hover:bg-muted/40"
+                    }`}
+                  >
+                    {op.label}
+                  </button>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
@@ -616,10 +690,10 @@ export default function ConfiguracionPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">Aviso instantáneo en tu celular aunque la app esté cerrada.</p>
                     {tooltipPush && (
                       <div className="mt-2 p-3 bg-zinc-950 text-white rounded-xl text-xs space-y-1.5">
-                        <p>✅ App cerrada — llega igual</p>
-                        <p>✅ Celular bloqueado — aparece en la pantalla</p>
-                        <p>✅ App en segundo plano — llega igual</p>
-                        <p>❌ Celular apagado — no llega en ese momento</p>
+                        <div className="flex items-start gap-2"><Check size={14} className="text-green-400 shrink-0 mt-0.5" /><span>App cerrada — llega igual</span></div>
+                        <div className="flex items-start gap-2"><Check size={14} className="text-green-400 shrink-0 mt-0.5" /><span>Celular bloqueado — aparece en la pantalla</span></div>
+                        <div className="flex items-start gap-2"><Check size={14} className="text-green-400 shrink-0 mt-0.5" /><span>App en segundo plano — llega igual</span></div>
+                        <div className="flex items-start gap-2"><X size={14} className="text-red-400 shrink-0 mt-0.5" /><span>Celular apagado — no llega en ese momento</span></div>
                         <p className="text-zinc-400 pt-1">En iPhone solo funciona si instalaste GB PRO en la pantalla de inicio.</p>
                       </div>
                     )}
@@ -641,9 +715,9 @@ export default function ConfiguracionPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">Recibe un email cada vez que alguien reserve o cancele.</p>
                     {tooltipEmail && (
                       <div className="mt-2 p-3 bg-zinc-950 text-white rounded-xl text-xs space-y-1.5">
-                        <p>✅ Celular apagado — llega igual, lo ves cuando enciendas</p>
-                        <p>✅ Sin internet — queda guardado en tu Gmail</p>
-                        <p>✅ Nunca se pierde — siempre queda en tu bandeja</p>
+                        <div className="flex items-start gap-2"><Check size={14} className="text-green-400 shrink-0 mt-0.5" /><span>Celular apagado — llega igual, lo ves cuando enciendas</span></div>
+                        <div className="flex items-start gap-2"><Check size={14} className="text-green-400 shrink-0 mt-0.5" /><span>Sin internet — queda guardado en tu Gmail</span></div>
+                        <div className="flex items-start gap-2"><Check size={14} className="text-green-400 shrink-0 mt-0.5" /><span>Nunca se pierde — siempre queda en tu bandeja</span></div>
                         <p className="text-zinc-400 pt-1">El email llega desde noreply@gbpro.app</p>
                       </div>
                     )}
