@@ -289,7 +289,7 @@ export default function FidelidadPage() {
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-bold">Canjes recientes</CardTitle>
-            <CardDescription>Cuando un cliente canjea una recompensa, aparece acá para que se la entregues.</CardDescription>
+            <CardDescription>Cuando un cliente canjea una recompensa, aparece aquí para que se la entregues.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

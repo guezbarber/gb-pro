@@ -100,16 +100,16 @@ export default function PrivacidadPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-black uppercase tracking-wider">9. Tus derechos</h2>
-        <p>Tenés los siguientes derechos sobre tus datos personales:</p>
+        <p>Tienes los siguientes derechos sobre tus datos personales:</p>
         <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-          <li><strong className="text-foreground">Acceso:</strong> podés solicitar una copia de todos tus datos</li>
-          <li><strong className="text-foreground">Rectificación:</strong> podés corregir datos incorrectos</li>
-          <li><strong className="text-foreground">Eliminación:</strong> podés solicitar que borremos tus datos ("derecho al olvido")</li>
-          <li><strong className="text-foreground">Portabilidad:</strong> podés solicitar tus datos en formato exportable</li>
-          <li><strong className="text-foreground">Oposición:</strong> podés oponerte al procesamiento de tus datos en ciertos casos</li>
-          <li><strong className="text-foreground">Revocación del consentimiento:</strong> podés retirar tu consentimiento en cualquier momento</li>
+          <li><strong className="text-foreground">Acceso:</strong> puedes solicitar una copia de todos tus datos</li>
+          <li><strong className="text-foreground">Rectificación:</strong> puedes corregir datos incorrectos</li>
+          <li><strong className="text-foreground">Eliminación:</strong> puedes solicitar que borremos tus datos ("derecho al olvido")</li>
+          <li><strong className="text-foreground">Portabilidad:</strong> puedes solicitar tus datos en formato exportable</li>
+          <li><strong className="text-foreground">Oposición:</strong> puedes oponerte al procesamiento de tus datos en ciertos casos</li>
+          <li><strong className="text-foreground">Revocación del consentimiento:</strong> puedes retirar tu consentimiento en cualquier momento</li>
         </ul>
-        <p>Para ejercer cualquiera de estos derechos escribí a: <strong>soporte@gbpro.app</strong>. Respondemos en un plazo máximo de 30 días.</p>
+        <p>Para ejercer cualquiera de estos derechos escribe a: <strong>soporte@gbpro.app</strong>. Respondemos en un plazo máximo de 30 días.</p>
         <p className="text-muted-foreground">Estos derechos aplican según la normativa vigente en tu país de residencia, incluyendo el RGPD (Europa), la Ley 18.331 (Uruguay) y normativas equivalentes en otros países.</p>
       </section>
 

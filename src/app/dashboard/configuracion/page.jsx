@@ -674,7 +674,7 @@ export default function ConfiguracionPage() {
               <CardTitle className="text-base font-bold flex items-center gap-2">
                 <MessageSquarePlus size={15} strokeWidth={1.8} /> Sugerencias y errores
               </CardTitle>
-              <CardDescription>¿Encontraste un error o tienes una idea para mejorar GB PRO? Contámelo acá.</CardDescription>
+              <CardDescription>¿Encontraste un error o tienes una idea para mejorar GB PRO? Cuéntanoslo aquí.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <form onSubmit={enviarFeedback} className="space-y-3">
@@ -706,7 +706,7 @@ export default function ConfiguracionPage() {
                     required
                     value={mensajeFeedback}
                     onChange={(e) => setMensajeFeedback(e.target.value)}
-                    placeholder={tipoFeedback === "error" ? "Describí el problema..." : "Describí tu sugerencia..."}
+                    placeholder={tipoFeedback === "error" ? "Describe el problema..." : "Describe tu sugerencia..."}
                     className="flex w-full min-h-[100px] rounded-md border border-input bg-muted/30 px-3 py-2 text-base resize-none"
                   />
                 </div>

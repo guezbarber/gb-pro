@@ -86,7 +86,7 @@ export default function MarketingPage() {
             <CardContent className="space-y-4">
               <textarea
                 className="w-full text-sm rounded-lg border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring min-h-[120px]"
-                placeholder="Escribí tu mensaje..."
+                placeholder="Escribe tu mensaje..."
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value)}
               />

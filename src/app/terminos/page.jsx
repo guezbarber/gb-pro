@@ -8,7 +8,7 @@ export default function TerminosPage() {
       </div>
 
       <p>
-        Estos Términos y Condiciones regulan el uso de <strong>GB PRO</strong> ("la Plataforma"), operada por <strong>Mitchel</strong>, con domicilio en Montevideo, Uruguay. Al registrarte o usar GB PRO, aceptás estos términos en su totalidad. Si no estás de acuerdo, no uses la Plataforma.
+        Estos Términos y Condiciones regulan el uso de <strong>GB PRO</strong> ("la Plataforma"), operada por <strong>Mitchel</strong>, con domicilio en Montevideo, Uruguay. Al registrarte o usar GB PRO, aceptas estos términos en su totalidad. Si no estás de acuerdo, no uses la Plataforma.
       </p>
 
       <section className="space-y-3">

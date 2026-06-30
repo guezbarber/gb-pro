@@ -36,7 +36,7 @@ const diasDesde = (isoString) => {
 
 // Mensaje de WhatsApp para reactivar (en español)
 const mensajeWhatsApp = (nombre, negocio) => {
-  const texto = `Hola ${nombre}! Te escribo de ${negocio}. Hace un tiempo que no te vemos y queríamos saber cómo andás. ¿Te gustaría agendar un turno? Te esperamos.`;
+  const texto = `Hola ${nombre}! Te escribo de ${negocio}. Hace un tiempo que no te vemos y queríamos saber cómo estás. ¿Te gustaría agendar un turno? Te esperamos.`;
   return encodeURIComponent(texto);
 };
 
