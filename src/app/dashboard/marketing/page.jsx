@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { MessageSquare } from "lucide-react";
 
 const PLANTILLAS = [
-  { label: "Reactivar cliente", texto: "¡Hola {nombre}! Hace tiempo que no te vemos. Esta semana tenemos horarios disponibles. ¿Agendamos tu próximo corte?" },
+  { label: "Reactivar cliente", texto: "¡Hola {nombre}! Hace tiempo que no te vemos. Esta semana tenemos horarios disponibles. ¿Agendamos tu próxima cita?" },
   { label: "Promoción especial", texto: "¡Hola {nombre}! Esta semana tenemos una oferta especial para clientes fieles. Escríbenos y te contamos." },
   { label: "Recordatorio turno", texto: "¡Hola {nombre}! Te recordamos que mañana tienes turno agendado. Te esperamos." },
 ];

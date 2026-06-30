@@ -46,7 +46,7 @@ export async function POST(request) {
     const evento = await calendar.events.insert({
       calendarId: tokens.calendar_id || "primary",
       requestBody: {
-        summary: `✂️ ${servicio} — ${client_name}`,
+        summary: `${servicio} — ${client_name}`,
         description: `Turno agendado via GBPro\nCliente: ${client_name}\nServicio: ${servicio}`,
         start: { dateTime: inicio.toISOString() },
         end: { dateTime: fin.toISOString() },

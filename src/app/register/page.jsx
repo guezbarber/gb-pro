@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
           <div className="text-center space-y-1">
             <h1 className="text-3xl font-extrabold tracking-tight">Crea tu cuenta</h1>
-            <p className="text-muted-foreground text-sm">Únete a la red global de barberos. Es gratis.</p>
+            <p className="text-muted-foreground text-sm">Únete a la red global de profesionales. Es gratis.</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">

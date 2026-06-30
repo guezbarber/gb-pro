@@ -120,7 +120,7 @@ export default function UnirseBarberiaPage() {
 
         <div className="bg-zinc-950 rounded-2xl p-6 text-center text-white">
           <h1 className="text-xl font-black tracking-tight">GB PRO</h1>
-          <p className="text-zinc-400 text-sm mt-1">Unirte a una barbería</p>
+          <p className="text-zinc-400 text-sm mt-1">Unirte a un negocio</p>
         </div>
 
         <Card className="border-border/50 shadow-xl">
@@ -128,7 +128,7 @@ export default function UnirseBarberiaPage() {
 
             {/* Código */}
             <div className="space-y-2">
-              <p className="font-bold text-sm">Código de la barbería</p>
+              <p className="font-bold text-sm">Código del negocio</p>
               <p className="text-xs text-muted-foreground">Tu jefe te lo tiene que dar.</p>
               <div className="flex gap-2">
                 <Input
@@ -182,7 +182,7 @@ export default function UnirseBarberiaPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          ¿Eres dueño de una barbería?{" "}
+          ¿Eres dueño del negocio?{" "}
           <a href="/login" className="font-bold hover:text-foreground transition-colors">Inicia sesión aquí</a>
         </p>
 

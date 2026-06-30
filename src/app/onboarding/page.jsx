@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Scissors, MapPin, Phone, Clock, Smartphone, Share, PlusSquare } from "lucide-react";
 
 const PASOS = [
-  { numero: 1, titulo: "Nombre de tu barbería", descripcion: "¿Cómo se llama tu negocio?", icono: Scissors },
+  { numero: 1, titulo: "Nombre de tu negocio", descripcion: "¿Cómo se llama tu negocio?", icono: Scissors },
   { numero: 2, titulo: "Ubicación", descripcion: "Para que tus clientes te encuentren.", icono: MapPin },
   { numero: 3, titulo: "WhatsApp", descripcion: "A este número llegan las reservas.", icono: Phone },
   { numero: 4, titulo: "Horarios de atención", descripcion: "¿Cuándo atiendes?", icono: Clock },
@@ -288,7 +288,7 @@ export default function OnboardingPage() {
                 {/* PASO 1 — Nombre */}
                 {paso === 1 && (
                   <div className="space-y-2 animate-in slide-in-from-right-4 fade-in">
-                    <Label>Nombre de la barbería</Label>
+                    <Label>Nombre de tu negocio</Label>
                     <Input
                       required autoFocus
                       placeholder="Nombre del negocio"

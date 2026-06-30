@@ -45,7 +45,7 @@ export function Sidebar() {
               <span className="text-lg">👥</span> Directorio CRM
             </Link>
             <Link href="/dashboard/services" className={getLinkClasses("/dashboard/services")}>
-              <span className="text-lg">✂️</span> Servicios
+              Servicios
             </Link>
           </nav>
         </div>

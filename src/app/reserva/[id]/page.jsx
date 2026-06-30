@@ -808,7 +808,7 @@ export default function ReservaPublicaPage({ params }) {
                 </div>
                 <div className="flex flex-col gap-3 pt-4 max-w-xs mx-auto">
                   <a
-                    href={`https://wa.me/${config.whatsapp_number}?text=¡Hola! Acabo de agendar un turno.%0A%0A✂️ *Servicio:* ${servicioElegido?.name}%0A📅 *Día:* ${fechaElegida}%0A⏰ *Hora:* ${horaElegida}%0A👤 *Nombre:* ${nombre}${barberoElegido && tieneEquipo ? `%0A💈 *Profesional:* ${barberoElegido.name}` : ""}`}
+                    href={`https://wa.me/${config.whatsapp_number}?text=¡Hola! Acabo de agendar un turno.%0A%0A📋 *Servicio:* ${servicioElegido?.name}%0A📅 *Día:* ${fechaElegida}%0A⏰ *Hora:* ${horaElegida}%0A👤 *Nombre:* ${nombre}${barberoElegido && tieneEquipo ? `%0A👤 *Profesional:* ${barberoElegido.name}` : ""}`}
                     target="_blank" rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-14 rounded-xl shadow-md transition-all active:scale-[0.98]"
                   >

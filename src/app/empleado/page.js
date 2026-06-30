@@ -38,7 +38,7 @@ export default function KioscoPage({ params }) {
       .eq("barber_id", barberId)
       .single();
 
-    if (error || !cfg) { setErrorCarga("No se encontró esta barbería."); return; }
+    if (error || !cfg) { setErrorCarga("No se encontró este negocio."); return; }
     setConfig(cfg);
 
     const { data: svcs } = await supabase
