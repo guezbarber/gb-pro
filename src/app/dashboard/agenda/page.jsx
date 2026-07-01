@@ -43,6 +43,7 @@ export default function AgendaPage() {
   const [turnosMes, setTurnosMes] = useState(0);
   const [clienteEncontrado, setClienteEncontrado] = useState(false);
   const [calendarConectado, setCalendarConectado] = useState(false);
+  const [calendarError, setCalendarError] = useState(false);
   const [barberIdState, setBarberIdState] = useState(null);
   const [barberoEmail, setBarberoEmail] = useState("");
   const [barberoNombre, setBarberoNombre] = useState("");
@@ -207,12 +208,18 @@ export default function AgendaPage() {
 
   const crearEventoCalendar = async (appointment_id, client_name, servicio, start_time, duration_minutes) => {
     if (!calendarConectado || !barberIdState) return;
-    try { await fetch("/api/calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ barber_id: barberIdState, appointment_id, client_name, servicio, start_time, duration_minutes: duration_minutes || 30 }) }); } catch { }
+    try {
+      const res = await fetch("/api/calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ barber_id: barberIdState, appointment_id, client_name, servicio, start_time, duration_minutes: duration_minutes || 30 }) });
+      if (res.status === 401) { const d = await res.json(); if (d.reconectar) { setCalendarConectado(false); setCalendarError(true); } }
+    } catch {}
   };
 
   const borrarEventoCalendar = async (appointment_id) => {
     if (!calendarConectado || !barberIdState) return;
-    try { await fetch("/api/calendar", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ barber_id: barberIdState, appointment_id }) }); } catch { }
+    try {
+      const res = await fetch("/api/calendar", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ barber_id: barberIdState, appointment_id }) });
+      if (res.status === 401) { const d = await res.json(); if (d.reconectar) { setCalendarConectado(false); setCalendarError(true); } }
+    } catch {}
   };
 
   const enviarEmail = async (tipo, datos) => {
@@ -577,6 +584,15 @@ export default function AgendaPage() {
           {t("agenda.bloquearHorario")}
         </button>
       </div>
+
+      {calendarError && (
+        <div className="flex items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+          <p className="font-medium text-amber-800">Google Calendar desconectado. Ve a Configuración para reconectar.</p>
+          <a href="/dashboard/configuracion?tab=general" className="shrink-0 font-bold text-amber-900 underline underline-offset-2 hover:text-amber-700">
+            Reconectar
+          </a>
+        </div>
+      )}
 
       {plan === "basico" && (
         <div className={`flex items-center justify-between p-4 rounded-xl border ${limiteAlcanzado ? "bg-red-50 border-red-200" : turnosRestantes <= 10 ? "bg-amber-50 border-amber-200" : "bg-muted/20 border-border/50"}`}>
