@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Users2 } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const COLORES_DISPONIBLES = [
   "#18181b", "#2563eb", "#10b981", "#f59e0b",
@@ -16,6 +17,7 @@ const COLORES_DISPONIBLES = [
 const LIMITE_BARBEROS_PRO = 5;
 
 export default function EquipoPage() {
+  const { t } = useIdioma();
   const [plan, setPlan] = useState("basico");
   const [loading, setLoading] = useState(true);
   const [barbershopId, setBarbershopId] = useState(null);
@@ -107,7 +109,10 @@ export default function EquipoPage() {
 
   const agregarBarbero = async () => {
     if (!nuevoNombre.trim()) return;
-    if (equipo.filter(m => m.activo).length >= LIMITE_BARBEROS_PRO) { alert(`El plan BOSS permite hasta ${LIMITE_BARBEROS_PRO} profesionales.`); return; }
+    if (equipo.filter(m => m.activo).length >= LIMITE_BARBEROS_PRO) {
+      alert(`${t("equipo.limiteDescPre")} ${LIMITE_BARBEROS_PRO} ${t("equipo.limiteDescPost")}`);
+      return;
+    }
     setGuardando(true);
     const { error } = await supabase.from("barbers").insert([{ barbershop_id: barbershopId, name: nuevoNombre.trim(), email: nuevoEmail.trim() || null, rol: "barber", tipo: "empleado", atiende_clientes: nuevoAtiende, activo: true, color: nuevoColor }]);
     if (!error) { setModalAgregar(false); setNuevoNombre(""); setNuevoEmail(""); setNuevoColor("#2563eb"); setNuevoAtiende(true); cargarEquipo(barbershopId); }
@@ -132,14 +137,18 @@ export default function EquipoPage() {
     if (!error) setEquipo(prev => prev.map(m => m.id === miembro.id ? { ...m, activo: nuevoEstado } : m));
   };
 
-  if (loading) return <div className="flex h-[60vh] items-center justify-center"><p className="text-muted-foreground animate-pulse">Cargando...</p></div>;
+  if (loading) return (
+    <div className="flex h-[60vh] items-center justify-center">
+      <p className="text-muted-foreground animate-pulse">{t("equipo.cargando")}</p>
+    </div>
+  );
 
   if (plan !== "PRO" && plan !== "BOSS") {
     return (
       <div className="max-w-3xl mx-auto space-y-6 pb-12">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Mi Equipo</h1>
-          <p className="text-muted-foreground mt-1">Gestiona los profesionales de tu local.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("equipo.titulo")}</h1>
+          <p className="text-muted-foreground mt-1">{t("equipo.subtitulo")}</p>
         </div>
         <Card className="border-none shadow-2xl bg-zinc-950 text-white overflow-hidden">
           <CardContent className="p-8 md:p-12 text-center space-y-6">
@@ -147,14 +156,14 @@ export default function EquipoPage() {
               <Users2 size={28} className="text-white" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-black">Gestiona tu equipo completo</h2>
-              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">Con el plan BOSS podés agregar hasta 5 profesionales, ver el rendimiento de cada uno y controlar todo desde un solo panel.</p>
+              <h2 className="text-2xl md:text-3xl font-black">{t("equipo.promoTitulo")}</h2>
+              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">{t("equipo.promoDesc")}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-lg mx-auto">
               {[
-                { title: "Hasta 5 profesionales", desc: "Cada uno con su propio acceso" },
-                { title: "Estadísticas por profesional", desc: "Turnos e ingresos individuales" },
-                { title: "Control total", desc: "Aprobar, activar, desactivar" },
+                { title: t("equipo.promoFeat1Titulo"), desc: t("equipo.promoFeat1Desc") },
+                { title: t("equipo.promoFeat2Titulo"), desc: t("equipo.promoFeat2Desc") },
+                { title: t("equipo.promoFeat3Titulo"), desc: t("equipo.promoFeat3Desc") },
               ].map((item, i) => (
                 <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/10">
                   <p className="font-bold text-sm">{item.title}</p>
@@ -163,7 +172,7 @@ export default function EquipoPage() {
               ))}
             </div>
             <a href="/dashboard/suscripcion">
-              <Button className="bg-white text-black hover:bg-zinc-200 font-black text-base h-12 px-10 mt-4">Ver planes</Button>
+              <Button className="bg-white text-black hover:bg-zinc-200 font-black text-base h-12 px-10 mt-4">{t("equipo.verPlanes")}</Button>
             </a>
           </CardContent>
         </Card>
@@ -182,20 +191,20 @@ export default function EquipoPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm overflow-hidden">
             <div className="bg-zinc-950 p-6 text-white">
-              <h2 className="text-xl font-black">Agregar profesional</h2>
-              <p className="text-zinc-400 text-sm mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} profesionales activos</p>
+              <h2 className="text-xl font-black">{t("equipo.agregarTitulo")}</h2>
+              <p className="text-zinc-400 text-sm mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} {t("equipo.activosLabel")}</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label>Nombre</Label>
-                <Input placeholder="Nombre" className="h-12 text-base bg-muted/30" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
+                <Label>{t("equipo.nombre")}</Label>
+                <Input placeholder={t("equipo.nombre")} className="h-12 text-base bg-muted/30" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Email <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>
-                <Input type="email" placeholder="carlos@email.com" className="h-12 text-base bg-muted/30" value={nuevoEmail} onChange={(e) => setNuevoEmail(e.target.value)} />
+                <Label>{t("equipo.email")} <span className="text-muted-foreground text-xs font-normal">{t("equipo.opcional")}</span></Label>
+                <Input type="email" placeholder="email@ejemplo.com" className="h-12 text-base bg-muted/30" value={nuevoEmail} onChange={(e) => setNuevoEmail(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Color en la agenda</Label>
+                <Label>{t("equipo.colorAgenda")}</Label>
                 <div className="flex gap-2 flex-wrap">
                   {COLORES_DISPONIBLES.map((color) => (
                     <button key={color} onClick={() => setNuevoColor(color)} className={`w-8 h-8 rounded-full border-2 transition-all ${nuevoColor === color ? "border-foreground scale-110" : "border-transparent"}`} style={{ backgroundColor: color }} />
@@ -204,17 +213,17 @@ export default function EquipoPage() {
               </div>
               <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border/50">
                 <div>
-                  <p className="font-bold text-sm">Atiende clientes</p>
-                  <p className="text-xs text-muted-foreground">Aparece como opción al agendar</p>
+                  <p className="font-bold text-sm">{t("equipo.atiendeClientes")}</p>
+                  <p className="text-xs text-muted-foreground">{t("equipo.atiendeDesc")}</p>
                 </div>
                 <button onClick={() => setNuevoAtiende(!nuevoAtiende)} className={`w-12 h-6 rounded-full transition-colors relative ${nuevoAtiende ? "bg-zinc-950" : "bg-muted"}`}>
                   <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${nuevoAtiende ? "left-7" : "left-1"}`} />
                 </button>
               </div>
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalAgregar(false); setNuevoNombre(""); setNuevoEmail(""); }}>Cancelar</Button>
+                <Button variant="outline" className="flex-1 font-bold h-12" onClick={() => { setModalAgregar(false); setNuevoNombre(""); setNuevoEmail(""); }}>{t("equipo.cancelar")}</Button>
                 <Button className="flex-1 font-bold h-12 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={agregarBarbero} disabled={guardando || !nuevoNombre.trim()}>
-                  {guardando ? "Guardando..." : "Agregar"}
+                  {guardando ? t("equipo.guardando") : t("equipo.agregar")}
                 </Button>
               </div>
             </div>
@@ -224,8 +233,8 @@ export default function EquipoPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Mi Equipo</h1>
-          <p className="text-muted-foreground mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} profesionales activos</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("equipo.titulo")}</h1>
+          <p className="text-muted-foreground mt-1">{barberosActivos.length}/{LIMITE_BARBEROS_PRO} {t("equipo.activosLabel")}</p>
         </div>
         <span className="bg-zinc-950 text-white text-xs font-black px-3 py-1 rounded-full">BOSS</span>
       </div>
@@ -233,12 +242,12 @@ export default function EquipoPage() {
       <Card className="border-border/50 shadow-sm">
         <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="font-bold text-sm">Código de tu negocio</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Comparte este código con tu equipo para que puedan unirse.</p>
+            <p className="font-bold text-sm">{t("equipo.codigoTitulo")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("equipo.codigoDesc")}</p>
           </div>
           <div className="flex items-center gap-3">
             <span className="font-black text-2xl tracking-widest">{codigoBarberia}</span>
-            <Button variant="outline" size="sm" className="font-bold h-9" onClick={copiarCodigo}>{copiado ? "Copiado" : "Copiar"}</Button>
+            <Button variant="outline" size="sm" className="font-bold h-9" onClick={copiarCodigo}>{copiado ? t("equipo.copiado") : t("equipo.copiar")}</Button>
           </div>
         </CardContent>
       </Card>
@@ -247,10 +256,10 @@ export default function EquipoPage() {
         <Card className="border-amber-200 bg-amber-50/30 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-bold flex items-center gap-2">
-              Solicitudes pendientes
+              {t("equipo.solicitudesTitulo")}
               <span className="bg-amber-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{solicitudes.length}</span>
             </CardTitle>
-            <CardDescription className="text-xs">Estos profesionales quieren unirse a tu equipo.</CardDescription>
+            <CardDescription className="text-xs">{t("equipo.solicitudesDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {solicitudes.map((s) => (
@@ -260,8 +269,8 @@ export default function EquipoPage() {
                   <p className="text-xs text-muted-foreground">{s.user_email}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" className="h-9 px-4 font-bold bg-green-600 hover:bg-green-700 text-white" onClick={() => aprobarSolicitud(s)} disabled={procesando === s.id}>{procesando === s.id ? "..." : "Aprobar"}</Button>
-                  <Button size="sm" variant="outline" className="h-9 px-4 font-bold text-red-500 border-red-200 hover:bg-red-50" onClick={() => rechazarSolicitud(s)} disabled={procesando === s.id}>Rechazar</Button>
+                  <Button size="sm" className="h-9 px-4 font-bold bg-green-600 hover:bg-green-700 text-white" onClick={() => aprobarSolicitud(s)} disabled={procesando === s.id}>{procesando === s.id ? "..." : t("equipo.aprobar")}</Button>
+                  <Button size="sm" variant="outline" className="h-9 px-4 font-bold text-red-500 border-red-200 hover:bg-red-50" onClick={() => rechazarSolicitud(s)} disabled={procesando === s.id}>{t("equipo.rechazar")}</Button>
                 </div>
               </div>
             ))}
@@ -271,10 +280,10 @@ export default function EquipoPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Profesionales activos", value: barberosActivos.length },
-          { label: "Turnos hoy", value: equipo.reduce((s, m) => s + m.turnosHoy, 0) },
-          { label: "Turnos este mes", value: equipo.reduce((s, m) => s + m.turnosMes, 0) },
-          { label: "Ingresos este mes", value: `$${equipo.reduce((s, m) => s + m.ingresosMes, 0)}` },
+          { label: t("equipo.kpiActivos"), value: barberosActivos.length },
+          { label: t("equipo.kpiTurnosHoy"), value: equipo.reduce((s, m) => s + m.turnosHoy, 0) },
+          { label: t("equipo.kpiTurnosMes"), value: equipo.reduce((s, m) => s + m.turnosMes, 0) },
+          { label: t("equipo.kpiIngresosMes"), value: `$${equipo.reduce((s, m) => s + m.ingresosMes, 0)}` },
         ].map((m, i) => (
           <Card key={i} className="border-border/50 shadow-sm">
             <CardContent className="p-4">
@@ -288,18 +297,18 @@ export default function EquipoPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
-            <CardTitle className="text-base font-bold">Profesionales</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Toca un profesional para editar sus datos.</CardDescription>
+            <CardTitle className="text-base font-bold">{t("equipo.profesionalesTitulo")}</CardTitle>
+            <CardDescription className="text-xs mt-0.5">{t("equipo.profesionalesDesc")}</CardDescription>
           </div>
           {puedeAgregarMas && (
-            <Button size="sm" className="font-bold h-9 bg-zinc-950 text-white hover:bg-zinc-800" onClick={() => setModalAgregar(true)}>+ Agregar</Button>
+            <Button size="sm" className="font-bold h-9 bg-zinc-950 text-white hover:bg-zinc-800" onClick={() => setModalAgregar(true)}>{t("equipo.agregarBtn")}</Button>
           )}
         </CardHeader>
         <CardContent>
           {loadingEquipo ? (
-            <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">Cargando equipo...</div>
+            <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">{t("equipo.cargandoEquipo")}</div>
           ) : equipo.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay profesionales todavía.</div>
+            <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("equipo.sinProfesionales")}</div>
           ) : (
             <div className="space-y-3">
               {equipo.map((miembro) => (
@@ -310,27 +319,27 @@ export default function EquipoPage() {
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-bold text-sm">{miembro.name}</p>
-                          {miembro.rol === "owner" && <span className="text-xs bg-zinc-950 text-white px-2 py-0.5 rounded-full font-bold">Dueño</span>}
-                          {!miembro.activo && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold">Inactivo</span>}
-                          {!miembro.atiende_clientes && <span className="text-xs border border-border/50 text-muted-foreground px-2 py-0.5 rounded-full font-bold">Solo admin</span>}
+                          {miembro.rol === "owner" && <span className="text-xs bg-zinc-950 text-white px-2 py-0.5 rounded-full font-bold">{t("equipo.dueno")}</span>}
+                          {!miembro.activo && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold">{t("equipo.inactivo")}</span>}
+                          {!miembro.atiende_clientes && <span className="text-xs border border-border/50 text-muted-foreground px-2 py-0.5 rounded-full font-bold">{t("equipo.soloAdmin")}</span>}
                         </div>
                         {miembro.email && <p className="text-xs text-muted-foreground mt-0.5">{miembro.email}</p>}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="font-black text-lg">${miembro.ingresosMes}</p>
-                      <p className="text-xs text-muted-foreground">{miembro.turnosMes} turnos / mes</p>
+                      <p className="text-xs text-muted-foreground">{miembro.turnosMes} {t("equipo.turnosMesLabel")}</p>
                     </div>
                   </div>
                   {editandoId === miembro.id && (
                     <div className="border-t border-border/50 p-4 bg-muted/10 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label>Nombre</Label>
+                          <Label>{t("equipo.nombre")}</Label>
                           <Input className="h-11 text-base bg-muted/30" value={editNombre} onChange={(e) => setEditNombre(e.target.value)} />
                         </div>
                         <div className="space-y-1.5">
-                          <Label>Color en agenda</Label>
+                          <Label>{t("equipo.colorAgendaEdit")}</Label>
                           <div className="flex gap-2 flex-wrap pt-1">
                             {COLORES_DISPONIBLES.map((color) => (
                               <button key={color} onClick={() => setEditColor(color)} className={`w-8 h-8 rounded-full border-2 transition-all ${editColor === color ? "border-foreground scale-110" : "border-transparent"}`} style={{ backgroundColor: color }} />
@@ -341,8 +350,8 @@ export default function EquipoPage() {
                       {miembro.rol !== "owner" && (
                         <div className="flex items-center justify-between p-3 bg-background rounded-xl border border-border/50">
                           <div>
-                            <p className="font-bold text-sm">Atiende clientes</p>
-                            <p className="text-xs text-muted-foreground">Aparece como opción al agendar</p>
+                            <p className="font-bold text-sm">{t("equipo.atiendeClientes")}</p>
+                            <p className="text-xs text-muted-foreground">{t("equipo.atiendeDesc")}</p>
                           </div>
                           <button onClick={() => setEditAtiende(!editAtiende)} className={`w-12 h-6 rounded-full transition-colors relative ${editAtiende ? "bg-zinc-950" : "bg-muted"}`}>
                             <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${editAtiende ? "left-7" : "left-1"}`} />
@@ -350,11 +359,11 @@ export default function EquipoPage() {
                         </div>
                       )}
                       <div className="flex gap-2 flex-wrap">
-                        <Button className="font-bold h-10 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={guardarEdicion} disabled={guardandoEdicion}>{guardandoEdicion ? "Guardando..." : "Guardar cambios"}</Button>
-                        <Button variant="outline" className="font-bold h-10" onClick={() => setEditandoId(null)}>Cancelar</Button>
+                        <Button className="font-bold h-10 bg-zinc-950 hover:bg-zinc-800 text-white" onClick={guardarEdicion} disabled={guardandoEdicion}>{guardandoEdicion ? t("equipo.guardando") : t("equipo.guardarCambios")}</Button>
+                        <Button variant="outline" className="font-bold h-10" onClick={() => setEditandoId(null)}>{t("equipo.cancelar")}</Button>
                         {miembro.rol !== "owner" && (
                           <Button variant="outline" className={`font-bold h-10 ml-auto ${miembro.activo ? "text-red-500 border-red-200 hover:bg-red-50" : "text-green-600 border-green-200 hover:bg-green-50"}`} onClick={() => toggleActivo(miembro)}>
-                            {miembro.activo ? "Desactivar" : "Reactivar"}
+                            {miembro.activo ? t("equipo.desactivar") : t("equipo.reactivar")}
                           </Button>
                         )}
                       </div>
@@ -369,8 +378,8 @@ export default function EquipoPage() {
 
       {!puedeAgregarMas && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-          <p className="font-bold text-amber-800">Límite de profesionales alcanzado</p>
-          <p className="text-amber-700 mt-0.5">El plan BOSS permite hasta {LIMITE_BARBEROS_PRO} profesionales activos.</p>
+          <p className="font-bold text-amber-800">{t("equipo.limiteTitulo")}</p>
+          <p className="text-amber-700 mt-0.5">{t("equipo.limiteDescPre")} {LIMITE_BARBEROS_PRO} {t("equipo.limiteDescPost")}</p>
         </div>
       )}
     </div>
