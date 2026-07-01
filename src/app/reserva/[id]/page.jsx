@@ -381,7 +381,7 @@ export default function ReservaPublicaPage({ params }) {
     }
 
     const barberoNombre = config.barber_name || "GB PRO";
-    const fechaFormateada = new Date(`${fechaElegida}T${horaElegida}`).toLocaleDateString("es-UY", { weekday: "long", day: "2-digit", month: "long" });
+    const fechaFormateada = new Date(`${fechaElegida}T${horaElegida}`).toLocaleDateString(idioma, { weekday: "long", day: "2-digit", month: "long" });
 
     if (!requiereSena) {
       if (email) {
@@ -444,7 +444,7 @@ export default function ReservaPublicaPage({ params }) {
         setPagandoSena(false);
       }
     } catch (err) {
-      alert("Connection error.");
+      alert(t("reserva.errorConexion"));
       setLoading(false);
       setPagandoSena(false);
     }
@@ -563,13 +563,13 @@ export default function ReservaPublicaPage({ params }) {
                       <div className="bg-zinc-950 text-white rounded-2xl p-5 space-y-3">
                         <div className="flex items-center gap-2">
                           <Star size={18} className="text-amber-400" />
-                          <p className="font-black text-base">Mis puntos</p>
+                          <p className="font-black text-base">{t("reserva.misPuntos")}</p>
                         </div>
-                        <p className="text-zinc-400 text-sm">Ingresa tu teléfono para ver tus puntos y canjear recompensas.</p>
+                        <p className="text-zinc-400 text-sm">{t("reserva.ingresaTelefono")}</p>
                         <div className="flex gap-2">
                           <Input
                             type="tel"
-                            placeholder="Tu teléfono"
+                            placeholder={t("reserva.tuTelefono")}
                             className="h-12 text-base bg-white/10 border-white/20 text-white placeholder:text-zinc-500"
                             value={telefonoPuntos}
                             onChange={(e) => { setTelefonoPuntos(e.target.value); setPuntosNoEncontrado(false); }}
@@ -579,21 +579,21 @@ export default function ReservaPublicaPage({ params }) {
                             onClick={buscarPuntos}
                             disabled={buscandoPuntos || telefonoPuntos.trim().length < 6}
                           >
-                            {buscandoPuntos ? "..." : "Ver"}
+                            {buscandoPuntos ? "..." : t("reserva.ver")}
                           </Button>
                         </div>
                         {puntosNoEncontrado && (
-                          <p className="text-zinc-400 text-xs">No encontramos puntos con ese teléfono. Reserva tu primer turno para empezar a sumar.</p>
+                          <p className="text-zinc-400 text-xs">{t("reserva.puntosNoEncontrado")}</p>
                         )}
                       </div>
                     ) : (
                       <div className="space-y-3">
                         <div className="bg-zinc-950 text-white rounded-2xl p-5 text-center">
-                          <p className="text-zinc-400 text-sm">Hola {clientePuntos.nombre}</p>
+                          <p className="text-zinc-400 text-sm">{t("reserva.hola")}{clientePuntos.nombre}</p>
                           <p className="text-5xl font-black mt-1">{clientePuntos.puntos}</p>
-                          <p className="text-zinc-400 text-sm">puntos disponibles</p>
+                          <p className="text-zinc-400 text-sm">{t("reserva.puntosDisponibles")}</p>
                           <button onClick={() => { setClientePuntos(null); setTelefonoPuntos(""); }} className="text-zinc-500 text-xs mt-3 hover:text-white transition-colors">
-                            Cambiar de teléfono
+                            {t("reserva.cambiarTelefono")}
                           </button>
                         </div>
 
@@ -603,15 +603,15 @@ export default function ReservaPublicaPage({ params }) {
                               <Check size={18} className="text-green-600" strokeWidth={2.5} />
                             </div>
                             <div>
-                              <p className="font-bold text-sm text-green-800">¡Canjeaste {recompensaCanjeada}!</p>
-                              <p className="text-xs text-green-700">Muestra este canje a tu profesional.</p>
+                              <p className="font-bold text-sm text-green-800">{t("reserva.canjeastePre")}{recompensaCanjeada}!</p>
+                              <p className="text-xs text-green-700">{t("reserva.muestraCanje")}</p>
                             </div>
                           </div>
                         )}
 
                         {recompensas.length > 0 ? (
                           <div className="space-y-2">
-                            <p className="text-sm font-bold text-muted-foreground">Recompensas disponibles</p>
+                            <p className="text-sm font-bold text-muted-foreground">{t("reserva.recompensasDisponibles")}</p>
                             {recompensas.map((r) => {
                               const alcanza = clientePuntos.puntos >= r.costo_puntos;
                               return (
@@ -622,7 +622,7 @@ export default function ReservaPublicaPage({ params }) {
                                     </div>
                                     <div>
                                       <p className="font-bold text-sm">{r.nombre}</p>
-                                      <p className="text-xs text-muted-foreground">{r.costo_puntos} puntos</p>
+                                      <p className="text-xs text-muted-foreground">{r.costo_puntos} {t("reserva.puntos")}</p>
                                     </div>
                                   </div>
                                   <Button
@@ -631,7 +631,7 @@ export default function ReservaPublicaPage({ params }) {
                                     disabled={!alcanza || canjeando === r.id}
                                     onClick={() => canjearRecompensa(r)}
                                   >
-                                    {canjeando === r.id ? "..." : alcanza ? "Canjear" : "Faltan pts"}
+                                    {canjeando === r.id ? "..." : alcanza ? t("reserva.canjear") : t("reserva.faltanPts")}
                                   </Button>
                                 </div>
                               );
@@ -639,7 +639,7 @@ export default function ReservaPublicaPage({ params }) {
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded-xl">
-                            Todavía no hay recompensas disponibles.
+                            {t("reserva.sinRecompensas")}
                           </p>
                         )}
                       </div>
@@ -652,7 +652,7 @@ export default function ReservaPublicaPage({ params }) {
             {paso === 2 && tieneEquipo && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">2. {t("reserva.elegirServicio").replace("1. ", "")}</h2>
+                  <h2 className="text-xl font-bold">{t("reserva.elegirServicio2")}</h2>
                   <button onClick={() => setPaso(1)} className="text-sm text-muted-foreground hover:text-foreground font-medium">{t("reserva.volver")}</button>
                 </div>
                 {barberoElegido && (
