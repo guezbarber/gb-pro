@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, X, Tag } from "lucide-react";
@@ -14,98 +15,86 @@ const MP_URLS = {
 };
 
 const CODIGOS = {
-  AMIGO: { url: MP_URLS.amigo, descuento: "50% off", plan: "pro" },
-  MEJOR: { url: MP_URLS.mejor, descuento: "100% gratis", plan: "pro" },
+  AMIGO: { url: MP_URLS.amigo, tipo: "50off", plan: "pro" },
+  MEJOR: { url: MP_URLS.mejor, tipo: "free", plan: "pro" },
 };
 
-const PLANES = [
-  {
-    id: "basico",
-    nombre: "Básico",
-    precio: "$0",
-    periodo: "/mes",
-    descripcion: "Para arrancar y probar.",
-    features: [
-      { texto: "Agenda digital", incluido: true },
-      { texto: "Enlace de reservas", incluido: true },
-      { texto: "50 turnos por mes", incluido: true },
-      { texto: "Turnos ilimitados", incluido: false },
-      { texto: "CRM de clientes", incluido: false },
-      { texto: "Marketing y fidelidad", incluido: false },
-      { texto: "Tienda online", incluido: false },
-      { texto: "Equipo de profesionales", incluido: false },
-    ],
-    cta: "Plan actual",
-    ctaDisabled: true,
-    mpUrl: null,
-  },
-  {
-    id: "pro",
-    nombre: "PRO",
-    precio: "$12.99",
-    periodo: "USD/mes",
-    descripcion: "Para el profesional independiente.",
-    destacado: true,
-    features: [
-      { texto: "Todo lo del plan Básico", incluido: true },
-      { texto: "Turnos ilimitados", incluido: true },
-      { texto: "CRM de clientes", incluido: true },
-      { texto: "Finanzas y reportes", incluido: true },
-      { texto: "Marketing y fidelidad", incluido: true },
-      { texto: "Tienda online", incluido: true },
-      { texto: "Mapa VIP", incluido: true },
-      { texto: "Equipo de profesionales", incluido: false },
-    ],
-    cta: "Suscribirse con MercadoPago",
-    mpUrl: MP_URLS.pro,
-  },
-  {
-    id: "boss",
-    nombre: "BOSS",
-    precio: "$24.99",
-    periodo: "USD/mes",
-    descripcion: "Para negocios con equipo.",
-    features: [
-      { texto: "Todo lo del plan PRO", incluido: true },
-      { texto: "Hasta 5 profesionales", incluido: true },
-      { texto: "Dashboard del equipo", incluido: true },
-      { texto: "Estadísticas por profesional", incluido: true },
-      { texto: "Acceso de empleados gratis", incluido: true },
-      { texto: "Selector de profesional en reservas", incluido: true },
-      { texto: "Control total del negocio", incluido: true },
-      { texto: "", incluido: null },
-    ],
-    cta: "Suscribirse con MercadoPago",
-    mpUrl: MP_URLS.boss,
-  },
-];
-
 export default function SuscripcionPage() {
+  const { t } = useIdioma();
   const [planActual, setPlanActual] = useState("basico");
   const [loading, setLoading] = useState(null);
   const [codigo, setCodigo] = useState("");
   const [codigoAplicado, setCodigoAplicado] = useState(null);
   const [errorCodigo, setErrorCodigo] = useState("");
 
+  const PLANES = [
+    {
+      id: "basico",
+      nombre: t("suscripcion.basicoNombre"),
+      precio: "$0",
+      periodo: t("suscripcion.basicoPeriodo"),
+      descripcion: t("suscripcion.basicoDesc"),
+      features: [
+        { texto: t("suscripcion.feat.agendaDigital"), incluido: true },
+        { texto: t("suscripcion.feat.enlaceReservas"), incluido: true },
+        { texto: t("suscripcion.feat.50Turnos"), incluido: true },
+        { texto: t("suscripcion.feat.turnosIlimitados"), incluido: false },
+        { texto: t("suscripcion.feat.crmClientes"), incluido: false },
+        { texto: t("suscripcion.feat.marketingFidelidad"), incluido: false },
+        { texto: t("suscripcion.feat.tiendaOnline"), incluido: false },
+        { texto: t("suscripcion.feat.equipoProfesionales"), incluido: false },
+      ],
+      cta: t("suscripcion.basicoCta"),
+      ctaDisabled: true,
+      mpUrl: null,
+    },
+    {
+      id: "pro",
+      nombre: "PRO",
+      precio: "$12.99",
+      periodo: t("suscripcion.proPeriodo"),
+      descripcion: t("suscripcion.proDesc"),
+      destacado: true,
+      features: [
+        { texto: t("suscripcion.feat.todoBasico"), incluido: true },
+        { texto: t("suscripcion.feat.turnosIlimitados"), incluido: true },
+        { texto: t("suscripcion.feat.crmClientes"), incluido: true },
+        { texto: t("suscripcion.feat.finanzasReportes"), incluido: true },
+        { texto: t("suscripcion.feat.marketingFidelidad"), incluido: true },
+        { texto: t("suscripcion.feat.tiendaOnline"), incluido: true },
+        { texto: t("suscripcion.feat.mapaVip"), incluido: true },
+        { texto: t("suscripcion.feat.equipoProfesionales"), incluido: false },
+      ],
+      cta: t("suscripcion.proCta"),
+      mpUrl: MP_URLS.pro,
+    },
+    {
+      id: "boss",
+      nombre: "BOSS",
+      precio: "$24.99",
+      periodo: t("suscripcion.bossPeriodo"),
+      descripcion: t("suscripcion.bossDesc"),
+      features: [
+        { texto: t("suscripcion.feat.todoPro"), incluido: true },
+        { texto: t("suscripcion.feat.hasta5"), incluido: true },
+        { texto: t("suscripcion.feat.dashboardEquipo"), incluido: true },
+        { texto: t("suscripcion.feat.estadisticas"), incluido: true },
+        { texto: t("suscripcion.feat.accesoEmpleados"), incluido: true },
+        { texto: t("suscripcion.feat.selectorProfesional"), incluido: true },
+        { texto: t("suscripcion.feat.controlTotal"), incluido: true },
+        { texto: "", incluido: null },
+      ],
+      cta: t("suscripcion.bossCta"),
+      mpUrl: MP_URLS.boss,
+    },
+  ];
+
   useEffect(() => {
     const cargarPlan = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      // Buscar en barber_settings
-      const { data: settings } = await supabase
-        .from("barber_settings")
-        .select("plan")
-        .eq("barber_id", user.id)
-        .single();
-
-      // Buscar también en barbershops por si acaso
-      const { data: bshop } = await supabase
-        .from("barbershops")
-        .select("plan")
-        .eq("owner_id", user.id)
-        .single();
-
+      const { data: settings } = await supabase.from("barber_settings").select("plan").eq("barber_id", user.id).single();
+      const { data: bshop } = await supabase.from("barbershops").select("plan").eq("owner_id", user.id).single();
       const plan = settings?.plan || bshop?.plan || "basico";
       setPlanActual(plan.toLowerCase());
     };
@@ -118,7 +107,7 @@ export default function SuscripcionPage() {
       setCodigoAplicado({ ...CODIGOS[codigoUpper], codigo: codigoUpper });
       setErrorCodigo("");
     } else {
-      setErrorCodigo("Código inválido. Verificá con quien te lo dio.");
+      setErrorCodigo(t("suscripcion.codigoInvalido"));
       setCodigoAplicado(null);
     }
   };
@@ -127,40 +116,40 @@ export default function SuscripcionPage() {
     if (plan.ctaDisabled) return;
     let url = plan.mpUrl;
     if (codigoAplicado && plan.id === codigoAplicado.plan) url = codigoAplicado.url;
-    if (!url) { alert("Este plan estará disponible muy pronto."); return; }
+    if (!url) { alert(t("suscripcion.proximamente")); return; }
     setLoading(plan.id);
     window.location.href = url;
   };
 
   const esActual = (planId) => planActual === planId;
 
+  const descuentoLabel = (tipo) => tipo === "free" ? t("suscripcion.gratis") : t("suscripcion.descuento50");
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
 
       <div className="space-y-1">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Planes</h1>
-        <p className="text-muted-foreground">Sin comisiones. Sin sorpresas. Cancela cuando quieras.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("suscripcion.titulo")}</h1>
+        <p className="text-muted-foreground">{t("suscripcion.subtitulo")}</p>
       </div>
 
-      {/* Plan activo */}
       {planActual !== "basico" && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
           <Check size={16} className="text-green-600 shrink-0" />
           <p className="text-sm font-bold text-green-800">
-            Estás en el plan <span className="uppercase">{planActual}</span> — activo
+            {t("suscripcion.planActivoPre")} <span className="uppercase">{planActual}</span> {t("suscripcion.planActivoPost")}
           </p>
         </div>
       )}
 
-      {/* Código de descuento */}
       <div className="p-5 rounded-xl border border-border/50 bg-muted/20 space-y-3">
         <div className="flex items-center gap-2">
           <Tag size={15} strokeWidth={1.8} className="text-muted-foreground" />
-          <p className="font-bold text-sm">¿Tienes un código de descuento?</p>
+          <p className="font-bold text-sm">{t("suscripcion.codigoTitulo")}</p>
         </div>
         <div className="flex gap-2">
           <Input
-            placeholder="Ingresa tu código"
+            placeholder={t("suscripcion.codigoPlaceholder")}
             className="h-11 text-base bg-background uppercase tracking-widest font-bold max-w-xs"
             value={codigo}
             onChange={(e) => {
@@ -171,7 +160,7 @@ export default function SuscripcionPage() {
             onKeyDown={(e) => { if (e.key === "Enter") aplicarCodigo(); }}
           />
           <Button variant="outline" className="h-11 font-bold px-6" onClick={aplicarCodigo} disabled={!codigo.trim()}>
-            Aplicar
+            {t("suscripcion.codigoAplicar")}
           </Button>
         </div>
         {errorCodigo && <p className="text-sm text-red-500 font-medium">{errorCodigo}</p>}
@@ -179,13 +168,12 @@ export default function SuscripcionPage() {
           <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
             <Check size={14} className="text-green-600 shrink-0" />
             <p className="text-sm font-bold text-green-800">
-              Código aplicado — {codigoAplicado.descuento} en el plan PRO
+              {t("suscripcion.codigoAplicadoPre")} {descuentoLabel(codigoAplicado.tipo)} {t("suscripcion.codigoAplicadoPost")}
             </p>
           </div>
         )}
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {PLANES.map((plan) => (
           <div
@@ -204,11 +192,11 @@ export default function SuscripcionPage() {
                   {plan.nombre}
                 </p>
                 {esActual(plan.id) && plan.id !== "basico" && (
-                  <span className="text-[10px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">Actual</span>
+                  <span className="text-[10px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">{t("suscripcion.actual")}</span>
                 )}
                 {codigoAplicado && plan.id === codigoAplicado.plan && (
                   <span className="text-[10px] font-black bg-green-600 text-white px-2 py-0.5 rounded-full">
-                    {codigoAplicado.descuento}
+                    {descuentoLabel(codigoAplicado.tipo)}
                   </span>
                 )}
               </div>
@@ -217,7 +205,7 @@ export default function SuscripcionPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-black line-through opacity-40">{plan.precio}</span>
                     <span className="text-3xl font-black text-green-400">
-                      {codigoAplicado.descuento === "100% gratis" ? "Gratis" : "50% off"}
+                      {descuentoLabel(codigoAplicado.tipo)}
                     </span>
                   </div>
                 ) : (
@@ -268,11 +256,11 @@ export default function SuscripcionPage() {
               disabled={plan.ctaDisabled || loading === plan.id}
             >
               {loading === plan.id
-                ? "Redirigiendo..."
+                ? t("suscripcion.redirigiendo")
                 : esActual(plan.id) && plan.id !== "basico"
-                  ? "Plan activo"
+                  ? t("suscripcion.planActivoBtn")
                   : codigoAplicado && plan.id === codigoAplicado.plan
-                    ? "Activar con descuento"
+                    ? t("suscripcion.activarConDescuento")
                     : plan.cta
               }
             </Button>
@@ -281,9 +269,9 @@ export default function SuscripcionPage() {
       </div>
 
       <div className="space-y-1 text-center">
-        <p className="text-xs text-muted-foreground">Pago seguro procesado por MercadoPago. Cancela cuando quieras.</p>
+        <p className="text-xs text-muted-foreground">{t("suscripcion.footerPago")}</p>
         <p className="text-xs text-muted-foreground">
-          ¿Dudas? <a href="mailto:soporte@gbpro.app" className="font-bold hover:text-foreground transition-colors">soporte@gbpro.app</a>
+          {t("suscripcion.footerDudas")} <a href="mailto:soporte@gbpro.app" className="font-bold hover:text-foreground transition-colors">soporte@gbpro.app</a>
         </p>
       </div>
 
