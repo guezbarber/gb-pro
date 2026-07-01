@@ -139,6 +139,8 @@ export const TRADUCCIONES = {
     "agenda.editarTurno": "Editar turno",
     "agenda.sinHorariosLibresEseDia": "Sin horarios libres ese día.",
     "agenda.guardar": "Guardar",
+    "agenda.puntosPara": "puntos para",
+    "agenda.horaFinMayorInicio": "La hora de fin debe ser mayor al inicio.",
 
     // ── Panel principal ──
     "panel.titulo": "Panel",
@@ -397,6 +399,8 @@ export const TRADUCCIONES = {
     "agenda.editarTurno": "Edit appointment",
     "agenda.sinHorariosLibresEseDia": "No times available that day.",
     "agenda.guardar": "Save",
+    "agenda.puntosPara": "points for",
+    "agenda.horaFinMayorInicio": "End time must be after start time.",
 
     // ── Panel principal ──
     "panel.titulo": "Dashboard",
@@ -655,6 +659,8 @@ export const TRADUCCIONES = {
     "agenda.editarTurno": "Editar horário",
     "agenda.sinHorariosLibresEseDia": "Sem horários livres nesse dia.",
     "agenda.guardar": "Salvar",
+    "agenda.puntosPara": "pontos para",
+    "agenda.horaFinMayorInicio": "A hora de fim deve ser maior que o início.",
 
     // ── Panel principal ──
     "panel.titulo": "Painel",

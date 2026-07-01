@@ -414,7 +414,7 @@ export default function AgendaPage() {
 
   const guardarBloqueo = async () => {
     if (!bloqueoFecha || !bloqueoInicio || !bloqueoFin) return;
-    if (bloqueoFin <= bloqueoInicio) { alert("La hora de fin debe ser mayor al inicio."); return; }
+    if (bloqueoFin <= bloqueoInicio) { alert(t("agenda.horaFinMayorInicio")); return; }
     setGuardandoBloqueo(true);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("blocked_slots").insert([{ barber_id: user.id, fecha: bloqueoFecha, hora_inicio: bloqueoInicio, hora_fin: bloqueoFin, motivo: bloqueoMotivo || null }]);
@@ -439,7 +439,7 @@ export default function AgendaPage() {
       {puntosOtorgadosAviso && (
         <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-zinc-950 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in slide-in-from-bottom-4">
           <Star size={16} className="text-amber-400" strokeWidth={2.5} />
-          <p className="text-sm font-bold">+{puntosOtorgadosAviso.puntos} puntos para {puntosOtorgadosAviso.nombre}</p>
+          <p className="text-sm font-bold">+{puntosOtorgadosAviso.puntos} {t("agenda.puntosPara")} {puntosOtorgadosAviso.nombre}</p>
         </div>
       )}
 
