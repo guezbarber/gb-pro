@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { usePathname } from "next/navigation";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export function Navbar() {
   const [user, setUser] = useState(null);
   const pathname = usePathname();
+  const { t } = useIdioma();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -39,15 +41,15 @@ export function Navbar() {
       <div className="flex items-center gap-2">
         {user ? (
           <Link href="/dashboard" className="px-4 py-2 bg-zinc-950 text-white font-bold rounded-lg text-sm hover:bg-zinc-800 transition-colors">
-            Mi panel
+            {t("nav.miPanel")}
           </Link>
         ) : (
           <>
             <Link href="/login" className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
-              Iniciar sesión
+              {t("nav.iniciarSesion")}
             </Link>
             <Link href="/register" className="px-4 py-2 bg-zinc-950 text-white font-bold rounded-lg text-sm hover:bg-zinc-800 transition-colors">
-              Registrarse
+              {t("nav.registrarse")}
             </Link>
           </>
         )}

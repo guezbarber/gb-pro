@@ -7,6 +7,14 @@ export const IDIOMA_DEFAULT = "es";
 
 export const TRADUCCIONES = {
   es: {
+    // ── Navbar y Footer públicos ──
+    "nav.miPanel": "Mi panel",
+    "nav.iniciarSesion": "Iniciar sesión",
+    "nav.registrarse": "Registrarse",
+    "footer.terminos": "Términos",
+    "footer.privacidad": "Privacidad",
+    "footer.soporte": "Soporte",
+
     // ── Reserva pública ──
     "reserva.elegirBarbero": "1. Elige tu profesional",
     "reserva.elegirServicio": "1. Elige tu servicio",
@@ -656,6 +664,13 @@ export const TRADUCCIONES = {
   },
 
   en: {
+    "nav.miPanel": "My dashboard",
+    "nav.iniciarSesion": "Log in",
+    "nav.registrarse": "Sign up",
+    "footer.terminos": "Terms",
+    "footer.privacidad": "Privacy",
+    "footer.soporte": "Support",
+
     "reserva.elegirBarbero": "1. Choose your professional",
     "reserva.elegirServicio": "1. Choose your service",
     "reserva.sinPreferencia": "No preference — any available professional",
@@ -1299,6 +1314,13 @@ export const TRADUCCIONES = {
   },
 
   pt: {
+    "nav.miPanel": "Meu painel",
+    "nav.iniciarSesion": "Entrar",
+    "nav.registrarse": "Cadastrar-se",
+    "footer.terminos": "Termos",
+    "footer.privacidad": "Privacidade",
+    "footer.soporte": "Suporte",
+
     "reserva.elegirBarbero": "1. Escolha seu profissional",
     "reserva.elegirServicio": "1. Escolha seu serviço",
     "reserva.sinPreferencia": "Sem preferência — qualquer profissional disponível",
