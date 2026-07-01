@@ -587,9 +587,9 @@ export default function AgendaPage() {
 
       {calendarError && (
         <div className="flex items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-          <p className="font-medium text-amber-800">Google Calendar desconectado. Ve a Configuración para reconectar.</p>
+          <p className="font-medium text-amber-800">{t("agenda.calendarError")}</p>
           <a href="/dashboard/configuracion?tab=general" className="shrink-0 font-bold text-amber-900 underline underline-offset-2 hover:text-amber-700">
-            Reconectar
+            {t("agenda.calendarReconectar")}
           </a>
         </div>
       )}

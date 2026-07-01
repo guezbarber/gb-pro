@@ -174,6 +174,8 @@ export const TRADUCCIONES = {
     "agenda.guardar": "Guardar",
     "agenda.puntosPara": "puntos para",
     "agenda.horaFinMayorInicio": "La hora de fin debe ser mayor al inicio.",
+    "agenda.calendarError": "Google Calendar desconectado. Ve a Configuración para reconectar.",
+    "agenda.calendarReconectar": "Reconectar",
 
     // ── Panel principal ──
     "panel.titulo": "Panel",
@@ -849,6 +851,8 @@ export const TRADUCCIONES = {
     "agenda.guardar": "Save",
     "agenda.puntosPara": "points for",
     "agenda.horaFinMayorInicio": "End time must be after start time.",
+    "agenda.calendarError": "Google Calendar disconnected. Go to Settings to reconnect.",
+    "agenda.calendarReconectar": "Reconnect",
 
     // ── Panel principal ──
     "panel.titulo": "Dashboard",
@@ -1524,6 +1528,8 @@ export const TRADUCCIONES = {
     "agenda.guardar": "Salvar",
     "agenda.puntosPara": "pontos para",
     "agenda.horaFinMayorInicio": "A hora de fim deve ser maior que o início.",
+    "agenda.calendarError": "Google Calendar desconectado. Acesse Configurações para reconectar.",
+    "agenda.calendarReconectar": "Reconectar",
 
     // ── Panel principal ──
     "panel.titulo": "Painel",
