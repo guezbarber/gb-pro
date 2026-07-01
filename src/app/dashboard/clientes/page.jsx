@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Mail, Cake, FileText, Clock } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 const DIAS_INACTIVO = 30;
 
@@ -53,6 +54,8 @@ export default function ClientesPage() {
   const [cumpleEditando, setCumpleEditando] = useState(null);
   const [textoCumple, setTextoCumple] = useState("");
   const [guardandoCumple, setGuardandoCumple] = useState(false);
+
+  const { t } = useIdioma();
 
   useEffect(() => { cargarClientes(); }, []);
 
@@ -157,8 +160,8 @@ export default function ClientesPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Clientes</h1>
-        <p className="text-muted-foreground mt-1">Tu base de datos automática.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("clientes.titulo")}</h1>
+        <p className="text-muted-foreground mt-1">{t("clientes.subtitulo")}</p>
       </div>
 
       {/* Clientes que no vuelven */}
@@ -166,9 +169,9 @@ export default function ClientesPage() {
         <Card className="border-amber-200 bg-amber-50/40 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-bold flex items-center gap-2 text-amber-800">
-              <Clock size={16} strokeWidth={2} /> Clientes que no vuelven ({clientesInactivos.length})
+              <Clock size={16} strokeWidth={2} /> {t("clientes.noVuelven")} ({clientesInactivos.length})
             </CardTitle>
-            <p className="text-xs text-amber-700/80">Hace más de {DIAS_INACTIVO} días que no vienen. Escribiles para que vuelvan: el mensaje ya está listo.</p>
+            <p className="text-xs text-amber-700/80">{t("clientes.noVuelvenDescPre")} {DIAS_INACTIVO} {t("clientes.noVuelvenDescPost")}</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -176,10 +179,10 @@ export default function ClientesPage() {
                 <div key={idx} className="bg-background rounded-xl border border-amber-200/70 p-4 flex flex-col gap-3">
                   <div>
                     <p className="font-bold text-sm truncate">{cliente.nombre}</p>
-                    <p className="text-xs text-muted-foreground">{cliente.telefono || "Sin número"}</p>
+                    <p className="text-xs text-muted-foreground">{cliente.telefono || t("clientes.sinNumero")}</p>
                     <div className="flex items-center gap-1.5 mt-2 text-xs font-bold text-amber-700">
                       <Clock size={11} />
-                      <span>Hace {diasDesde(cliente.ultimaVisita)} días</span>
+                      <span>{t("clientes.hace")} {diasDesde(cliente.ultimaVisita)} {t("clientes.dias")}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -190,20 +193,20 @@ export default function ClientesPage() {
                         rel="noopener noreferrer"
                       >
                         <Button variant="outline" className="w-full h-9 text-xs font-bold flex items-center gap-2 border-green-200 text-green-700 hover:bg-green-50">
-                          <MessageSquare size={13} /> Enviar WhatsApp
+                          <MessageSquare size={13} /> {t("clientes.enviarWhatsapp")}
                         </Button>
                       </a>
                     ) : (
-                      <Button variant="outline" disabled className="w-full h-9 text-xs opacity-40">Sin WhatsApp</Button>
+                      <Button variant="outline" disabled className="w-full h-9 text-xs opacity-40">{t("clientes.sinWhatsapp")}</Button>
                     )}
                     {cliente.email ? (
                       <a href={`mailto:${cliente.email}?subject=${encodeURIComponent(asuntoEmail)}&body=${cuerpoEmail(cliente.nombre)}`}>
                         <Button variant="outline" className="w-full h-9 text-xs font-bold flex items-center gap-2 border-blue-200 text-blue-600 hover:bg-blue-50">
-                          <Mail size={13} /> Enviar email
+                          <Mail size={13} /> {t("clientes.enviarEmail")}
                         </Button>
                       </a>
                     ) : (
-                      <Button variant="outline" disabled className="w-full h-9 text-xs opacity-30">Sin email</Button>
+                      <Button variant="outline" disabled className="w-full h-9 text-xs opacity-30">{t("clientes.sinEmail")}</Button>
                     )}
                   </div>
                 </div>
@@ -216,9 +219,9 @@ export default function ClientesPage() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="flex flex-col gap-3 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <CardTitle className="text-base font-bold">Directorio ({clientes.length})</CardTitle>
+            <CardTitle className="text-base font-bold">{t("clientes.directorio")} ({clientes.length})</CardTitle>
             <Input
-              placeholder="Buscar por nombre, celular o email..."
+              placeholder={t("clientes.buscar")}
               className="w-full sm:max-w-xs h-11 text-base"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
@@ -227,10 +230,10 @@ export default function ClientesPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground animate-pulse text-sm">Cargando clientes...</div>
+            <div className="text-center py-8 text-muted-foreground animate-pulse text-sm">{t("clientes.cargando")}</div>
           ) : clientesFiltrados.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border-2 rounded-xl border-dashed">
-              No hay clientes registrados aún.
+              {t("clientes.sinClientes")}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -244,12 +247,12 @@ export default function ClientesPage() {
                           <Cake size={14} className="text-amber-500 shrink-0" />
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{cliente.telefono || "Sin número"}</p>
+                      <p className="text-sm text-muted-foreground">{cliente.telefono || t("clientes.sinNumero")}</p>
                       {cliente.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{cliente.email}</p>}
 
                       <div className="flex flex-wrap gap-2 text-xs font-medium my-3">
                         <span className="bg-muted text-muted-foreground px-2 py-1 rounded-md">
-                          {cliente.visitas} {cliente.visitas === 1 ? "turno" : "turnos"}
+                          {cliente.visitas} {cliente.visitas === 1 ? t("clientes.turno") : t("clientes.turnos")}
                         </span>
                         <span className="bg-muted text-muted-foreground px-2 py-1 rounded-md">
                           ${cliente.totalGastado}
@@ -265,16 +268,16 @@ export default function ClientesPage() {
                           <textarea
                             className="w-full text-sm rounded-lg border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                             rows={3}
-                            placeholder="Notas sobre el cliente"
+                            placeholder={t("clientes.notasPlaceholder")}
                             value={textoNota}
                             onChange={(e) => setTextoNota(e.target.value)}
                           />
                           <div className="flex gap-2">
                             <Button size="sm" className="flex-1 h-9 text-sm" onClick={() => guardarNota(cliente.key)} disabled={guardandoNota}>
-                              {guardandoNota ? "..." : "Guardar"}
+                              {guardandoNota ? "..." : t("clientes.guardar")}
                             </Button>
                             <Button size="sm" variant="outline" className="h-9 text-sm" onClick={() => { setNotaEditando(null); setTextoNota(""); }}>
-                              Cancelar
+                              {t("clientes.cancelar")}
                             </Button>
                           </div>
                         </div>
@@ -284,7 +287,7 @@ export default function ClientesPage() {
                           onClick={() => { setNotaEditando(cliente.key); setTextoNota(cliente.nota); }}
                         >
                           <FileText size={11} />
-                          <span className="italic">{cliente.nota || "Agregar nota"}</span>
+                          <span className="italic">{cliente.nota || t("clientes.agregarNota")}</span>
                         </div>
                       )}
 
@@ -294,10 +297,10 @@ export default function ClientesPage() {
                           <Input type="date" className="h-10 text-sm" value={textoCumple} onChange={(e) => setTextoCumple(e.target.value)} />
                           <div className="flex gap-2">
                             <Button size="sm" className="flex-1 h-9 text-sm" onClick={() => guardarCumple(cliente)} disabled={guardandoCumple}>
-                              {guardandoCumple ? "..." : "Guardar"}
+                              {guardandoCumple ? "..." : t("clientes.guardar")}
                             </Button>
                             <Button size="sm" variant="outline" className="h-9 text-sm" onClick={() => { setCumpleEditando(null); setTextoCumple(""); }}>
-                              Cancelar
+                              {t("clientes.cancelar")}
                             </Button>
                           </div>
                         </div>
@@ -307,7 +310,7 @@ export default function ClientesPage() {
                           onClick={() => { setCumpleEditando(cliente.key); setTextoCumple(cliente.birthdate || ""); }}
                         >
                           <Cake size={11} />
-                          <span className="italic">{cliente.birthdate ? formatearCumple(cliente.birthdate) : "Agregar cumpleaños"}</span>
+                          <span className="italic">{cliente.birthdate ? formatearCumple(cliente.birthdate) : t("clientes.agregarCumple")}</span>
                         </div>
                       )}
                     </div>
@@ -321,7 +324,7 @@ export default function ClientesPage() {
                           </Button>
                         </a>
                       ) : (
-                        <Button variant="outline" disabled className="w-full h-10 text-sm opacity-40">Sin WhatsApp</Button>
+                        <Button variant="outline" disabled className="w-full h-10 text-sm opacity-40">{t("clientes.sinWhatsapp")}</Button>
                       )}
                       {cliente.email ? (
                         <a href={`mailto:${cliente.email}`}>
@@ -330,7 +333,7 @@ export default function ClientesPage() {
                           </Button>
                         </a>
                       ) : (
-                        <Button variant="outline" disabled className="w-full h-10 text-sm opacity-30">Sin email</Button>
+                        <Button variant="outline" disabled className="w-full h-10 text-sm opacity-30">{t("clientes.sinEmail")}</Button>
                       )}
                     </div>
                   </CardContent>
