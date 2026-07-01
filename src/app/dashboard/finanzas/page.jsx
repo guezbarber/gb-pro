@@ -183,14 +183,14 @@ export default function FinanzasPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Ingresos", value: `$${ingresosMes}`, color: "" },
-          { label: "Gastos", value: `$${gastosMes}`, color: "text-red-500" },
-          { label: "Ganancia neta", value: `$${gananciaNeta}`, color: gananciaNeta >= 0 ? "text-green-600" : "text-red-500" },
+          { label: "Gastos", value: `$${gastosMes}`, color: "text-foreground" },
+          { label: "Ganancia neta", value: `$${gananciaNeta}`, color: gananciaNeta < 0 ? "text-muted-foreground" : "text-foreground" },
           { label: "Ticket promedio", value: `$${ticketPromedio}`, color: "" },
         ].map((m, i) => (
           <Card key={i} className="border-border/50 shadow-sm">
             <CardContent className="p-4 md:p-5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{m.label}</p>
-              <p className={`text-2xl md:text-3xl font-black ${m.color}`}>{loading ? "..." : m.value}</p>
+              <p className={`text-3xl md:text-4xl font-light tracking-tight ${m.color}`}>{loading ? "..." : m.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -327,7 +327,7 @@ export default function FinanzasPage() {
                     <p className="text-xs text-muted-foreground">{g.categoria} · {g.fecha}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <p className="font-black text-base text-red-500">-${g.monto}</p>
+                    <p className="font-light text-base text-foreground">-${g.monto}</p>
                     <button onClick={() => eliminarGasto(g.id)} className="text-muted-foreground hover:text-red-500 transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100">
                       <Trash2 size={14} strokeWidth={2} />
                     </button>
@@ -356,7 +356,7 @@ export default function FinanzasPage() {
                     <p className="font-bold text-sm">{svc.name}</p>
                     <p className="text-xs text-muted-foreground">{svc.turnos} {svc.turnos === 1 ? "turno" : "turnos"}</p>
                   </div>
-                  <p className="font-black text-base">${svc.ingresos}</p>
+                  <p className="font-light text-base">${svc.ingresos}</p>
                 </div>
               ))}
             </div>
