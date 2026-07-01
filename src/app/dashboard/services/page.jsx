@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil, Trash2, Star } from "lucide-react";
+import { useIdioma } from "@/hooks/useIdioma";
 
 export default function ServiciosPage() {
+  const { t } = useIdioma();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
@@ -74,7 +76,7 @@ export default function ServiciosPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Borrar este servicio?")) return;
+    if (!window.confirm(t("services.confirmarBorrar"))) return;
     const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) alert("Error: " + error.message);
     else {
@@ -86,8 +88,8 @@ export default function ServiciosPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Servicios</h1>
-        <p className="text-muted-foreground mt-1">Gestiona tu catálogo de servicios y precios.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("services.titulo")}</h1>
+        <p className="text-muted-foreground mt-1">{t("services.subtitulo")}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -95,48 +97,47 @@ export default function ServiciosPage() {
         {/* Formulario */}
         <Card className="lg:col-span-1 border-border/50 shadow-sm h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">{editingId ? "Editar servicio" : "Nuevo servicio"}</CardTitle>
+            <CardTitle className="text-base font-bold">{editingId ? t("services.editar") : t("services.nuevo")}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Nombre</Label>
-                <Input required placeholder="Nombre del servicio" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+                <Label>{t("services.nombre")}</Label>
+                <Input required placeholder={t("services.nombrePlaceholder")} className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Precio ($)</Label>
+                  <Label>{t("services.precio")}</Label>
                   <Input type="number" step="any" min="0" required placeholder="400" className="h-11" value={price} onChange={(e) => setPrice(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Duración (min)</Label>
+                  <Label>{t("services.duracion")}</Label>
                   <Input type="number" min="1" required placeholder="30" className="h-11" value={duration} onChange={(e) => setDuration(e.target.value)} />
                 </div>
               </div>
 
-              {/* Puntos que otorga el servicio */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <Star size={13} strokeWidth={2} /> Puntos que otorga
+                  <Star size={13} strokeWidth={2} /> {t("services.puntosOtorga")}
                 </Label>
                 <Input type="number" min="0" placeholder="0" className="h-11" value={puntos} onChange={(e) => setPuntos(e.target.value)} />
                 {!fidelidadActiva ? (
                   <p className="text-xs text-muted-foreground">
-                    El sistema de puntos está desactivado. Actívalo en Configuración → Reservas para que estos puntos se sumen.
+                    {t("services.puntosDesactivados")}
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Puntos que el cliente gana cada vez que completa este servicio.
+                    {t("services.puntosDesc")}
                   </p>
                 )}
               </div>
 
               <Button type="submit" className="w-full font-bold h-11 mt-1" disabled={loading}>
-                {loading ? "Guardando..." : editingId ? "Guardar cambios" : "Agregar servicio"}
+                {loading ? t("services.guardando") : editingId ? t("services.guardarCambios") : t("services.agregar")}
               </Button>
               {editingId && (
                 <Button type="button" variant="outline" className="w-full font-bold h-10" onClick={handleCancelEdit}>
-                  Cancelar
+                  {t("services.cancelar")}
                 </Button>
               )}
             </form>
@@ -146,19 +147,19 @@ export default function ServiciosPage() {
         {/* Lista */}
         <Card className="lg:col-span-2 border-border/50 shadow-sm h-fit">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-bold">Servicios registrados</CardTitle>
+            <CardTitle className="text-base font-bold">{t("services.registrados")}</CardTitle>
             {services.length > 0 && (
               <span className="text-xs font-medium bg-muted px-2 py-1 rounded-full text-muted-foreground">
-                {services.length} {services.length === 1 ? "servicio" : "servicios"}
+                {services.length} {services.length === 1 ? t("services.servicio") : t("services.servicios")}
               </span>
             )}
           </CardHeader>
           <CardContent>
             {loadingData ? (
-              <div className="text-center py-10 text-muted-foreground text-sm animate-pulse">Cargando...</div>
+              <div className="text-center py-10 text-muted-foreground text-sm animate-pulse">{t("services.cargando")}</div>
             ) : services.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">
-                No hay servicios. Agrega tu primer servicio.
+                {t("services.vacio")}
               </div>
             ) : (
               <div className="space-y-2">
