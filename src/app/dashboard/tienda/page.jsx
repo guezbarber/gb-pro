@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ShoppingBag, Trash2, Pencil } from "lucide-react";
 
 export default function TiendaPage() {
+  const { t } = useIdioma();
   const [plan, setPlan] = useState("basico");
   const [loading, setLoading] = useState(true);
   const [productos, setProductos] = useState([]);
@@ -89,7 +91,7 @@ export default function TiendaPage() {
   const cancelarEdicion = () => { setEditandoId(null); setNombre(""); setPrecio(""); setStock(""); setDescripcion(""); };
 
   const handleEliminar = async (id) => {
-    if (!window.confirm("¿Eliminar este producto?")) return;
+    if (!window.confirm(t("tienda.eliminarConfirm"))) return;
     const { error } = await supabase.from("productos").delete().eq("id", id);
     if (error) alert("Error: " + error.message);
     else setProductos(prev => prev.filter(p => p.id !== id));
@@ -107,8 +109,8 @@ export default function TiendaPage() {
     return (
       <div className="max-w-3xl mx-auto space-y-6 pb-12">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Tienda</h1>
-          <p className="text-muted-foreground mt-1">Vende productos físicos directamente desde tu perfil.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("tienda.titulo")}</h1>
+          <p className="text-muted-foreground mt-1">{t("tienda.subtituloPromo")}</p>
         </div>
         <Card className="border-none shadow-2xl bg-zinc-950 text-white overflow-hidden">
           <CardContent className="p-8 md:p-12 text-center space-y-6">
@@ -116,11 +118,11 @@ export default function TiendaPage() {
               <ShoppingBag size={28} className="text-white" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-black">Vende mientras cortas</h2>
-              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">Con el plan PRO activas tu tienda y punto de venta rápido.</p>
+              <h2 className="text-2xl md:text-3xl font-black">{t("tienda.promoTitulo")}</h2>
+              <p className="text-zinc-400 mt-3 text-base max-w-md mx-auto">{t("tienda.promoDesc")}</p>
             </div>
             <a href="/dashboard/suscripcion">
-              <Button className="bg-white text-black hover:bg-zinc-200 font-black text-base h-12 px-10 mt-4">Ver planes</Button>
+              <Button className="bg-white text-black hover:bg-zinc-200 font-black text-base h-12 px-10 mt-4">{t("tienda.verPlanes")}</Button>
             </a>
           </CardContent>
         </Card>
@@ -131,16 +133,16 @@ export default function TiendaPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Tienda</h1>
-        <p className="text-muted-foreground mt-1">Vende productos y registra ventas en un toque.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("tienda.titulo")}</h1>
+        <p className="text-muted-foreground mt-1">{t("tienda.subtitulo")}</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Productos", value: productos.length },
-          { label: "En stock", value: productos.filter(p => p.stock > 0).length },
-          { label: "Ventas hoy", value: ventasHoy.length },
-          { label: "Ingresos hoy", value: `$${totalVentasHoy}` },
+          { label: t("tienda.kpiProductos"), value: productos.length },
+          { label: t("tienda.kpiEnStock"), value: productos.filter(p => p.stock > 0).length },
+          { label: t("tienda.kpiVentasHoy"), value: ventasHoy.length },
+          { label: t("tienda.kpiIngresosHoy"), value: `$${totalVentasHoy}` },
         ].map((m, i) => (
           <Card key={i} className="border-border/50 shadow-sm">
             <CardContent className="p-4">
@@ -151,15 +153,14 @@ export default function TiendaPage() {
         ))}
       </div>
 
-      {/* Venta rápida */}
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold">Venta rápida</CardTitle>
-          <CardDescription className="text-xs">Toca un producto para registrar la venta. Descuenta el stock automáticamente.</CardDescription>
+          <CardTitle className="text-base font-bold">{t("tienda.ventaRapidaTitulo")}</CardTitle>
+          <CardDescription className="text-xs">{t("tienda.ventaRapidaDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           {productos.filter(p => p.stock > 0).length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay productos con stock disponible.</div>
+            <div className="text-center py-6 text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("tienda.sinStock")}</div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {productos.filter(p => p.stock > 0).map((p) => (
@@ -168,8 +169,8 @@ export default function TiendaPage() {
                   <ShoppingBag size={24} className="mb-2 opacity-50 group-hover:opacity-80" />
                   <p className="font-black text-sm">{p.nombre}</p>
                   <p className="font-black text-lg mt-1">${p.precio}</p>
-                  <p className="text-xs text-muted-foreground group-hover:text-zinc-400 mt-1">Stock: {p.stock}</p>
-                  {vendiendo && productoVendiendo === p.id && <p className="text-xs font-bold mt-1 text-green-400">Vendido</p>}
+                  <p className="text-xs text-muted-foreground group-hover:text-zinc-400 mt-1">{t("tienda.stockLabel")} {p.stock}</p>
+                  {vendiendo && productoVendiendo === p.id && <p className="text-xs font-bold mt-1 text-green-400">{t("tienda.vendido")}</p>}
                 </button>
               ))}
             </div>
@@ -177,11 +178,10 @@ export default function TiendaPage() {
         </CardContent>
       </Card>
 
-      {/* Ventas de hoy */}
       {ventasHoy.length > 0 && (
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">Ventas de hoy</CardTitle>
+            <CardTitle className="text-base font-bold">{t("tienda.ventasHoyTitulo")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -202,46 +202,46 @@ export default function TiendaPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border-border/50 shadow-sm h-fit">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">{editandoId ? "Editar producto" : "Nuevo producto"}</CardTitle>
+            <CardTitle className="text-base font-bold">{editandoId ? t("tienda.editarProducto") : t("tienda.nuevoProducto")}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Nombre</Label>
-                <Input required placeholder="Nombre del producto" className="h-11" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <Label>{t("tienda.nombre")}</Label>
+                <Input required placeholder={t("tienda.nombrePlaceholder")} className="h-11" value={nombre} onChange={(e) => setNombre(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Precio ($)</Label>
+                  <Label>{t("tienda.precio")}</Label>
                   <Input required type="number" min="0" step="any" placeholder="15" className="h-11" value={precio} onChange={(e) => setPrecio(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Stock</Label>
+                  <Label>{t("tienda.stock")}</Label>
                   <Input required type="number" min="0" placeholder="10" className="h-11" value={stock} onChange={(e) => setStock(e.target.value)} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Descripción <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>
-                <textarea className="w-full text-sm rounded-md border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder="Descripción del producto" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+                <Label>{t("tienda.descripcion")} <span className="text-muted-foreground text-xs font-normal">{t("tienda.opcional")}</span></Label>
+                <textarea className="w-full text-sm rounded-md border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder={t("tienda.descripcionPlaceholder")} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
               </div>
               <Button type="submit" className="w-full h-11 font-bold" disabled={guardando}>
-                {guardando ? "Guardando..." : editandoId ? "Guardar cambios" : "Agregar producto"}
+                {guardando ? t("tienda.guardando") : editandoId ? t("tienda.guardarCambios") : t("tienda.agregar")}
               </Button>
-              {editandoId && <Button type="button" variant="outline" className="w-full h-10 font-bold" onClick={cancelarEdicion}>Cancelar</Button>}
+              {editandoId && <Button type="button" variant="outline" className="w-full h-10 font-bold" onClick={cancelarEdicion}>{t("tienda.cancelar")}</Button>}
             </form>
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-2 border-border/50 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">Catálogo ({productos.length})</CardTitle>
-            <CardDescription className="text-xs">Ajusta el stock con los botones + y −</CardDescription>
+            <CardTitle className="text-base font-bold">{t("tienda.catalogoTitulo")} ({productos.length})</CardTitle>
+            <CardDescription className="text-xs">{t("tienda.catalogoDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {loadingProductos ? (
-              <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">Cargando...</div>
+              <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">{t("tienda.cargando")}</div>
             ) : productos.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay productos. Agrega tu primer producto.</div>
+              <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("tienda.vacio")}</div>
             ) : (
               <div className="space-y-3">
                 {productos.map((p) => (
@@ -250,7 +250,7 @@ export default function TiendaPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-bold text-sm">{p.nombre}</p>
-                          {p.stock === 0 && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Sin stock</span>}
+                          {p.stock === 0 && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">{t("tienda.sinStockBadge")}</span>}
                         </div>
                         {p.descripcion && <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.descripcion}</p>}
                       </div>

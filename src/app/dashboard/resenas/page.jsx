@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link2, Star, X } from "lucide-react";
 
 export default function ResenasPage() {
+  const { idioma, t } = useIdioma();
   const [resenas, setResenas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [barberId, setBarberId] = useState(null);
@@ -24,7 +26,7 @@ export default function ResenasPage() {
   };
 
   const eliminarResena = async (id) => {
-    if (!window.confirm("¿Eliminar esta reseña?")) return;
+    if (!window.confirm(t("resenas.eliminarConfirm"))) return;
     const { error } = await supabase.from("resenas").delete().eq("id", id);
     if (!error) setResenas(prev => prev.filter(r => r.id !== id));
   };
@@ -51,19 +53,19 @@ export default function ResenasPage() {
     <Star key={i} size={14} strokeWidth={0} fill={i < n ? "#fbbf24" : "#e4e4e7"} />
   ));
 
-  const formatearFecha = (iso) => new Date(iso).toLocaleDateString("es-UY", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const formatearFecha = (iso) => new Date(iso).toLocaleDateString(idioma, { day: "2-digit", month: "2-digit", year: "numeric" });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
 
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Reseñas</h1>
-          <p className="text-muted-foreground mt-1">Lo que dicen tus clientes.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("resenas.titulo")}</h1>
+          <p className="text-muted-foreground mt-1">{t("resenas.subtitulo")}</p>
         </div>
         <Button variant="outline" className="font-bold w-full sm:w-auto h-11 flex items-center gap-2" onClick={copiarEnlace}>
           <Link2 size={14} />
-          {copiado ? "Copiado" : "Copiar enlace"}
+          {copiado ? t("resenas.copiado") : t("resenas.copiarEnlace")}
         </Button>
       </div>
 
@@ -75,7 +77,7 @@ export default function ResenasPage() {
               <div className="flex justify-center gap-0.5 mt-1">
                 {resenas.length > 0 ? renderEstrellas(Math.round(parseFloat(promedio))) : <span className="text-muted-foreground text-sm">—</span>}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{resenas.length} reseñas</p>
+              <p className="text-xs text-muted-foreground mt-1">{resenas.length} {t("resenas.resenasCount")}</p>
             </div>
             <div className="flex-1 space-y-1.5">
               {distribucion.map(({ estrella, cantidad, porcentaje }) => (
@@ -94,10 +96,10 @@ export default function ResenasPage() {
 
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "Total reseñas", value: resenas.length },
-            { label: "Promedio", value: promedio === "—" ? "—" : `${promedio} / 5` },
-            { label: "5 estrellas", value: resenas.filter(r => r.calificacion === 5).length },
-            { label: "Con comentario", value: resenas.filter(r => r.comentario).length },
+            { label: t("resenas.totalResenas"), value: resenas.length },
+            { label: t("resenas.promedio"), value: promedio === "—" ? "—" : `${promedio} / 5` },
+            { label: t("resenas.cincoEstrellas"), value: resenas.filter(r => r.calificacion === 5).length },
+            { label: t("resenas.conComentario"), value: resenas.filter(r => r.comentario).length },
           ].map((m, i) => (
             <Card key={i} className="border-border/50 shadow-sm">
               <CardContent className="p-4">
@@ -111,19 +113,19 @@ export default function ResenasPage() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold">Todas las reseñas</CardTitle>
+          <CardTitle className="text-base font-bold">{t("resenas.todasTitulo")}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">Cargando reseñas...</div>
+            <div className="text-center py-10 text-muted-foreground animate-pulse text-sm">{t("resenas.cargando")}</div>
           ) : resenas.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border-2 border-dashed rounded-xl space-y-3">
               <Star size={32} className="mx-auto opacity-20" />
-              <p className="font-bold">Aún no tienes reseñas</p>
-              <p>Comparte tu enlace con tus clientes para que te califiquen.</p>
+              <p className="font-bold">{t("resenas.vacio")}</p>
+              <p>{t("resenas.vacioDesc")}</p>
               <Button variant="outline" size="sm" className="font-bold h-10 flex items-center gap-2 mx-auto" onClick={copiarEnlace}>
                 <Link2 size={13} />
-                {copiado ? "Copiado" : "Copiar enlace"}
+                {copiado ? t("resenas.copiado") : t("resenas.copiarEnlace")}
               </Button>
             </div>
           ) : (

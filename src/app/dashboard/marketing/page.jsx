@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useIdioma } from "@/hooks/useIdioma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MessageSquare } from "lucide-react";
 
-const PLANTILLAS = [
-  { label: "Reactivar cliente", texto: "¡Hola {nombre}! Hace tiempo que no te vemos. Esta semana tenemos horarios disponibles. ¿Agendamos tu próxima cita?" },
-  { label: "Promoción especial", texto: "¡Hola {nombre}! Esta semana tenemos una oferta especial para clientes fieles. Escríbenos y te contamos." },
-  { label: "Recordatorio turno", texto: "¡Hola {nombre}! Te recordamos que mañana tienes turno agendado. Te esperamos." },
-];
-
 export default function MarketingPage() {
+  const { t } = useIdioma();
+
+  const PLANTILLAS = [
+    { label: t("marketing.plantilla1Label"), texto: t("marketing.plantilla1Texto") },
+    { label: t("marketing.plantilla2Label"), texto: t("marketing.plantilla2Texto") },
+    { label: t("marketing.plantilla3Label"), texto: t("marketing.plantilla3Texto") },
+  ];
+
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mensaje, setMensaje] = useState("");
@@ -34,9 +37,9 @@ export default function MarketingPage() {
 
     if (turnos) {
       const mapa = new Map();
-      turnos.forEach(t => {
-        const key = t.client_phone?.trim() || t.client_name?.trim();
-        if (!mapa.has(key)) mapa.set(key, { nombre: t.client_name, telefono: t.client_phone, ultimaVisita: t.start_time, visitas: 1 });
+      turnos.forEach(turno => {
+        const key = turno.client_phone?.trim() || turno.client_name?.trim();
+        if (!mapa.has(key)) mapa.set(key, { nombre: turno.client_name, telefono: turno.client_phone, ultimaVisita: turno.start_time, visitas: 1 });
         else mapa.get(key).visitas += 1;
       });
       setClientes(Array.from(mapa.values()).filter(c => c.telefono));
@@ -50,12 +53,12 @@ export default function MarketingPage() {
     return true;
   });
 
-  const toggleSeleccionado = (telefono) => setSeleccionados(prev => prev.includes(telefono) ? prev.filter(t => t !== telefono) : [...prev, telefono]);
+  const toggleSeleccionado = (telefono) => setSeleccionados(prev => prev.includes(telefono) ? prev.filter(tel => tel !== telefono) : [...prev, telefono]);
   const seleccionarTodos = () => setSeleccionados(seleccionados.length === clientesFiltrados.length ? [] : clientesFiltrados.map(c => c.telefono));
 
   const enviarCampana = () => {
-    if (!mensaje.trim()) { alert("Escribe un mensaje antes de enviar."); return; }
-    if (seleccionados.length === 0) { alert("Selecciona al menos un cliente."); return; }
+    if (!mensaje.trim()) { alert(t("marketing.errorMensaje")); return; }
+    if (seleccionados.length === 0) { alert(t("marketing.errorSeleccion")); return; }
     setEnviando(true);
     seleccionados.forEach((telefono, i) => {
       const cliente = clientes.find(c => c.telefono === telefono);
@@ -70,28 +73,27 @@ export default function MarketingPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Marketing</h1>
-        <p className="text-muted-foreground mt-1">Envía campañas de WhatsApp y reactiva clientes inactivos.</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("marketing.titulo")}</h1>
+        <p className="text-muted-foreground mt-1">{t("marketing.subtitulo")}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Mensaje */}
         <div className="lg:col-span-1 space-y-4">
           <Card className="border-border/50 shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold">Redactar mensaje</CardTitle>
-              <CardDescription className="text-xs">Usa {"{nombre}"} para personalizar con el nombre del cliente.</CardDescription>
+              <CardTitle className="text-base font-bold">{t("marketing.redactarTitulo")}</CardTitle>
+              <CardDescription className="text-xs">{t("marketing.redactarDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <textarea
                 className="w-full text-sm rounded-lg border border-input bg-muted/30 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring min-h-[120px]"
-                placeholder="Escribe tu mensaje..."
+                placeholder={t("marketing.placeholder")}
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value)}
               />
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Plantillas</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("marketing.plantillasLabel")}</p>
                 {PLANTILLAS.map((p, i) => (
                   <button key={i} onClick={() => setMensaje(p.texto)} className="w-full text-left text-xs p-2 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors font-medium">
                     {p.label}
@@ -107,24 +109,26 @@ export default function MarketingPage() {
             disabled={enviando || seleccionados.length === 0 || !mensaje.trim()}
           >
             <MessageSquare size={18} />
-            {enviando ? "Abriendo WhatsApp..." : `Enviar a ${seleccionados.length} cliente${seleccionados.length !== 1 ? "s" : ""}`}
+            {enviando
+              ? t("marketing.abriendoWA")
+              : `${t("marketing.enviarA")} ${seleccionados.length} ${seleccionados.length !== 1 ? t("marketing.clientes") : t("marketing.cliente")}`
+            }
           </Button>
 
           {seleccionados.length > 0 && (
-            <p className="text-xs text-center text-muted-foreground">Se abrirá WhatsApp para cada cliente seleccionado.</p>
+            <p className="text-xs text-center text-muted-foreground">{t("marketing.waAviso")}</p>
           )}
         </div>
 
-        {/* Lista */}
         <Card className="lg:col-span-2 border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="text-base font-bold">Clientes ({clientesFiltrados.length})</CardTitle>
+              <CardTitle className="text-base font-bold">{t("marketing.clientesTitulo")} ({clientesFiltrados.length})</CardTitle>
               <div className="flex gap-1 bg-muted/60 p-1 rounded-full border border-border/50">
                 {[
-                  { key: "todos", label: "Todos" },
+                  { key: "todos", label: t("marketing.filtroTodos") },
                   { key: "inactivos", label: `+${diasInactivo}d` },
-                  { key: "frecuentes", label: "Frecuentes" },
+                  { key: "frecuentes", label: t("marketing.filtroFrecuentes") },
                 ].map(f => (
                   <button key={f.key} onClick={() => { setFiltro(f.key); setSeleccionados([]); }} className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${filtro === f.key ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}>
                     {f.label}
@@ -134,21 +138,21 @@ export default function MarketingPage() {
             </div>
             {filtro === "inactivos" && (
               <div className="flex items-center gap-2 mt-2">
-                <Label className="text-xs text-muted-foreground whitespace-nowrap">Sin venir hace más de</Label>
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">{t("marketing.sinVenirHace")}</Label>
                 <Input type="number" min="1" className="h-7 w-16 text-xs" value={diasInactivo} onChange={(e) => setDiasInactivo(Number(e.target.value))} />
-                <Label className="text-xs text-muted-foreground">días</Label>
+                <Label className="text-xs text-muted-foreground">{t("marketing.dias")}</Label>
               </div>
             )}
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-10 text-muted-foreground text-sm animate-pulse">Cargando clientes...</div>
+              <div className="text-center py-10 text-muted-foreground text-sm animate-pulse">{t("marketing.cargando")}</div>
             ) : clientesFiltrados.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay clientes en esta categoría.</div>
+              <div className="text-center py-10 text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("marketing.sinClientesCategoria")}</div>
             ) : (
               <div className="space-y-2">
                 <button onClick={seleccionarTodos} className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors mb-2">
-                  {seleccionados.length === clientesFiltrados.length ? "Deseleccionar todos" : "Seleccionar todos"}
+                  {seleccionados.length === clientesFiltrados.length ? t("marketing.deseleccionar") : t("marketing.seleccionar")}
                 </button>
                 <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                   {clientesFiltrados.map((c, i) => {
@@ -166,8 +170,8 @@ export default function MarketingPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-bold">{c.visitas} {c.visitas === 1 ? "visita" : "visitas"}</p>
-                          <p className={`text-xs ${dias > 21 ? "text-red-500 font-bold" : "text-muted-foreground"}`}>Hace {dias}d</p>
+                          <p className="text-xs font-bold">{c.visitas} {c.visitas === 1 ? t("marketing.visita") : t("marketing.visitas")}</p>
+                          <p className={`text-xs ${dias > 21 ? "text-red-500 font-bold" : "text-muted-foreground"}`}>{t("marketing.hace")}{t("marketing.hace") ? " " : ""}{dias}d</p>
                         </div>
                       </div>
                     );
