@@ -7,26 +7,45 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ✅ Crear cliente OAuth con los tokens del barbero
-const getOAuthClient = (accessToken, refreshToken) => {
+// Builds an OAuth2 client with the stored tokens and wires up auto-persist on refresh.
+// expiry_date lets googleapis know to refresh proactively instead of waiting for a 401.
+const getOAuthClient = (tokens, barber_id) => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
   );
+
   oauth2Client.setCredentials({
-    access_token: accessToken,
-    refresh_token: refreshToken,
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    expiry_date: tokens.expires_at ? new Date(tokens.expires_at).getTime() : undefined,
   });
+
+  // Fired by googleapis whenever it issues a new access token.
+  // Persists the refreshed credentials so the next call doesn't need to refresh again.
+  oauth2Client.on("tokens", async (newTokens) => {
+    const update = { access_token: newTokens.access_token };
+    if (newTokens.expiry_date) {
+      update.expires_at = new Date(newTokens.expiry_date).toISOString();
+    }
+    if (newTokens.refresh_token) {
+      update.refresh_token = newTokens.refresh_token;
+    }
+    await supabase
+      .from("google_calendar_tokens")
+      .update(update)
+      .eq("barber_id", barber_id);
+  });
+
   return oauth2Client;
 };
 
-// ✅ POST — Crear evento en Google Calendar
+// POST — Crear evento en Google Calendar
 export async function POST(request) {
   try {
     const { barber_id, appointment_id, client_name, servicio, start_time, duration_minutes } = await request.json();
 
-    // Buscar tokens del barbero
     const { data: tokens, error: tokenError } = await supabase
       .from("google_calendar_tokens")
       .select("*")
@@ -37,7 +56,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Google Calendar no conectado" }, { status: 400 });
     }
 
-    const oauth2Client = getOAuthClient(tokens.access_token, tokens.refresh_token);
+    const oauth2Client = getOAuthClient(tokens, barber_id);
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     const inicio = new Date(start_time);
@@ -60,7 +79,6 @@ export async function POST(request) {
       },
     });
 
-    // Guardar el event_id para poder borrarlo después
     await supabase
       .from("appointments")
       .update({ google_event_id: evento.data.id })
@@ -74,7 +92,7 @@ export async function POST(request) {
   }
 }
 
-// ✅ DELETE — Borrar evento de Google Calendar
+// DELETE — Borrar evento de Google Calendar
 export async function DELETE(request) {
   try {
     const { barber_id, appointment_id } = await request.json();
@@ -99,7 +117,7 @@ export async function DELETE(request) {
       return NextResponse.json({ success: true, mensaje: "No había evento en Calendar" });
     }
 
-    const oauth2Client = getOAuthClient(tokens.access_token, tokens.refresh_token);
+    const oauth2Client = getOAuthClient(tokens, barber_id);
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     await calendar.events.delete({
@@ -120,7 +138,7 @@ export async function DELETE(request) {
   }
 }
 
-// ✅ GET — Verificar si el barbero tiene Google Calendar conectado
+// GET — Verificar si el barbero tiene Google Calendar conectado
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
