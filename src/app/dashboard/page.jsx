@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Copy, Check, Plus, X, ShoppingBag, DollarSign, Pencil, Minus, RotateCcw } from "lucide-react";
 import { useIdioma } from "@/hooks/useIdioma";
 
-const CATEGORIAS = ["Insumos", "Alquiler", "Sueldos", "Servicios", "Equipamiento", "Otros"];
-
 export default function DashboardPage() {
   const [turnosHoy, setTurnosHoy] = useState(0);
   const [ingresosHoy, setIngresosHoy] = useState(0);
@@ -58,6 +56,15 @@ export default function DashboardPage() {
   const arrastrandoGasto = useRef(false);
 
   const { t } = useIdioma();
+
+  const CATEGORIAS = [
+    t("panel.catInsumos"),
+    t("panel.catAlquiler"),
+    t("panel.catSueldos"),
+    t("panel.catServicios"),
+    t("panel.catEquipamiento"),
+    t("panel.catOtros"),
+  ];
 
   useEffect(() => { loadData(); }, []);
 
@@ -141,7 +148,7 @@ export default function DashboardPage() {
     if (turnosData) {
       setTurnosListaHoy(turnosData);
       setTurnosHoy(turnosData.length);
-      setIngresosHoy(turnosData.filter(t => t.status !== "falto").reduce((s, t) => s + (t.services?.price || 0), 0));
+      setIngresosHoy(turnosData.filter(appt => appt.status !== "falto").reduce((s, appt) => s + (appt.services?.price || 0), 0));
     }
 
     if (isOwner && bshop?.plan === "PRO" && bshop?.id) cargarEquipo(bshop.id);
@@ -173,11 +180,11 @@ export default function DashboardPage() {
           supabase.from("appointments").select("status, services(price)").eq("barber_member_id", miembro.id).gte("start_time", inicioMes),
           supabase.from("appointments").select("id, status").eq("barber_member_id", miembro.id).gte("start_time", hoy.toISOString()).lt("start_time", manana.toISOString()),
         ]);
-        const turnosValidos = (turnosMes || []).filter(t => t.status !== "falto");
+        const turnosValidos = (turnosMes || []).filter(a => a.status !== "falto");
         return {
           ...miembro,
           turnosMes: turnosValidos.length,
-          ingresosMes: turnosValidos.reduce((s, t) => s + (t.services?.price || 0), 0),
+          ingresosMes: turnosValidos.reduce((s, a) => s + (a.services?.price || 0), 0),
           turnosHoy: (turnosHoyData || []).length,
         };
       })
@@ -199,7 +206,7 @@ export default function DashboardPage() {
     if (!error) {
       setTurnosListaHoy(prev => {
         const updated = prev.map(a => a.id === id ? { ...a, status: nuevoStatus } : a);
-        setIngresosHoy(updated.filter(t => t.status !== "falto").reduce((s, t) => s + (t.services?.price || 0), 0));
+        setIngresosHoy(updated.filter(a => a.status !== "falto").reduce((s, a) => s + (a.services?.price || 0), 0));
         return updated;
       });
     } else {
@@ -561,7 +568,7 @@ export default function DashboardPage() {
                       <ShoppingBag size={22} className="mb-2 opacity-60" />
                       <p className="font-bold text-sm">{p.nombre}</p>
                       <p className="font-black text-lg">${p.precio}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Stock: {p.stock}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t("panel.stock")}: {p.stock}</p>
                     </button>
                   ))}
                 </div>

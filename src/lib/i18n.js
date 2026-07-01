@@ -191,6 +191,13 @@ export const TRADUCCIONES = {
     "panel.categoria": "Categoría",
     "panel.monto": "Monto ($)",
     "panel.registrarGasto": "Registrar gasto",
+    "panel.stock": "Stock",
+    "panel.catInsumos": "Insumos",
+    "panel.catAlquiler": "Alquiler",
+    "panel.catSueldos": "Sueldos",
+    "panel.catServicios": "Servicios",
+    "panel.catEquipamiento": "Equipamiento",
+    "panel.catOtros": "Otros",
 
     // ── Página Clientes ──
     "clientes.titulo": "Clientes",
@@ -827,6 +834,13 @@ export const TRADUCCIONES = {
     "panel.categoria": "Category",
     "panel.monto": "Amount ($)",
     "panel.registrarGasto": "Save expense",
+    "panel.stock": "Stock",
+    "panel.catInsumos": "Supplies",
+    "panel.catAlquiler": "Rent",
+    "panel.catSueldos": "Wages",
+    "panel.catServicios": "Services",
+    "panel.catEquipamiento": "Equipment",
+    "panel.catOtros": "Other",
 
     // ── Página Clientes ──
     "clientes.titulo": "Clients",
@@ -1463,6 +1477,13 @@ export const TRADUCCIONES = {
     "panel.categoria": "Categoria",
     "panel.monto": "Valor ($)",
     "panel.registrarGasto": "Registrar gasto",
+    "panel.stock": "Estoque",
+    "panel.catInsumos": "Insumos",
+    "panel.catAlquiler": "Aluguel",
+    "panel.catSueldos": "Salários",
+    "panel.catServicios": "Serviços",
+    "panel.catEquipamiento": "Equipamentos",
+    "panel.catOtros": "Outros",
 
     // ── Página Clientes ──
     "clientes.titulo": "Clientes",
