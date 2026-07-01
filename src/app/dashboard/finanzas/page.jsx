@@ -11,13 +11,13 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, Legend,
   XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
+import { useIdioma } from "@/hooks/useIdioma";
 
-const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const CATEGORIAS = ["Insumos","Alquiler","Sueldos","Servicios","Equipamiento","Otros"];
 const COLORES = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 export default function FinanzasPage() {
+  const { idioma, t } = useIdioma();
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState("mes");
   const [ingresosMes, setIngresosMes] = useState(0);
@@ -36,7 +36,7 @@ export default function FinanzasPage() {
   const [guardandoGasto, setGuardandoGasto] = useState(false);
   const [mostrarFormGasto, setMostrarFormGasto] = useState(false);
 
-  useEffect(() => { cargarFinanzas(); }, [periodo]);
+  useEffect(() => { cargarFinanzas(); }, [periodo, idioma]);
 
   const cargarFinanzas = async () => {
     setLoading(true);
@@ -46,13 +46,16 @@ export default function FinanzasPage() {
     const ahora = new Date();
     let inicio, etiquetas = [];
 
+    const fmtMes = new Intl.DateTimeFormat(idioma, { month: "short" });
+    const fmtDia = new Intl.DateTimeFormat(idioma, { weekday: "short" });
+
     if (periodo === "mes") {
       inicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
       const diasEnMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).getDate();
       for (let i = 1; i <= diasEnMes; i++) etiquetas.push({ key: String(i).padStart(2,"0"), label: `${i}` });
     } else {
       inicio = new Date(ahora.getFullYear(), 0, 1);
-      for (let i = 0; i < 12; i++) etiquetas.push({ key: String(i).padStart(2,"00"), label: MESES[i] });
+      for (let i = 0; i < 12; i++) etiquetas.push({ key: String(i).padStart(2,"00"), label: fmtMes.format(new Date(2024, i, 1)) });
     }
 
     const hoy = new Date();
@@ -126,7 +129,7 @@ export default function FinanzasPage() {
         const d = new Date(hace7);
         d.setDate(d.getDate() + i);
         const key = d.toISOString().split("T")[0];
-        mapaIngresosDia[key] = { dia: DIAS[d.getDay()], ingresos: 0 };
+        mapaIngresosDia[key] = { dia: fmtDia.format(d), ingresos: 0 };
       }
       turnos7.forEach(t => {
         const key = new Date(t.start_time).toISOString().split("T")[0];
@@ -155,7 +158,7 @@ export default function FinanzasPage() {
   };
 
   const eliminarGasto = async (id) => {
-    if (!window.confirm("¿Eliminar este gasto?")) return;
+    if (!window.confirm(t("finanzas.confirmarEliminar"))) return;
     const { error } = await supabase.from("gastos").delete().eq("id", id);
     if (!error) setGastos(prev => prev.filter(g => g.id !== id));
   };
@@ -167,25 +170,25 @@ export default function FinanzasPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Finanzas</h1>
-          <p className="text-muted-foreground mt-1">Ingresos, gastos y ganancia real.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{t("finanzas.titulo")}</h1>
+          <p className="text-muted-foreground mt-1">{t("finanzas.subtitulo")}</p>
         </div>
         <div className="bg-muted/60 p-1 rounded-full inline-flex border border-border/50 w-full sm:w-auto">
           <button onClick={() => setPeriodo("mes")} className={`flex-1 sm:flex-none px-5 py-2 rounded-full text-sm font-bold transition-all ${periodo === "mes" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}>
-            Este mes
+            {t("finanzas.periodoMes")}
           </button>
           <button onClick={() => setPeriodo("año")} className={`flex-1 sm:flex-none px-5 py-2 rounded-full text-sm font-bold transition-all ${periodo === "año" ? "bg-background shadow text-foreground" : "text-muted-foreground"}`}>
-            Este año
+            {t("finanzas.periodoAnio")}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Ingresos", value: `$${ingresosMes}`, color: "" },
-          { label: "Gastos", value: `$${gastosMes}`, color: "text-foreground" },
-          { label: "Ganancia neta", value: `$${gananciaNeta}`, color: gananciaNeta < 0 ? "text-muted-foreground" : "text-foreground" },
-          { label: "Ticket promedio", value: `$${ticketPromedio}`, color: "" },
+          { label: t("finanzas.ingresos"), value: `$${ingresosMes}`, color: "" },
+          { label: t("finanzas.gastos"), value: `$${gastosMes}`, color: "text-foreground" },
+          { label: t("finanzas.gananciaNeta"), value: `$${gananciaNeta}`, color: gananciaNeta < 0 ? "text-muted-foreground" : "text-foreground" },
+          { label: t("finanzas.ticketPromedio"), value: `$${ticketPromedio}`, color: "" },
         ].map((m, i) => (
           <Card key={i} className="border-border/50 shadow-sm">
             <CardContent className="p-4 md:p-5">
@@ -198,13 +201,13 @@ export default function FinanzasPage() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-bold">Ingresos vs Gastos — {periodo === "mes" ? "este mes" : "este año"}</CardTitle>
+          <CardTitle className="text-base font-bold">{t("finanzas.ingresosVsGastosTitulo")} — {periodo === "mes" ? t("finanzas.periodoMes") : t("finanzas.periodoAnio")}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="h-56 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+            <div className="h-56 flex items-center justify-center text-muted-foreground text-sm animate-pulse">{t("finanzas.cargando")}</div>
           ) : dataGrafica.every(d => d.ingresos === 0 && d.gastos === 0) ? (
-            <div className="h-56 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay datos en este período</div>
+            <div className="h-56 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("finanzas.sinDatos")}</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={dataGrafica} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
@@ -220,7 +223,7 @@ export default function FinanzasPage() {
                 </defs>
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value, name) => [`$${value}`, name === "ingresos" ? "Ingresos" : "Gastos"]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
+                <Tooltip formatter={(value, name) => [`$${value}`, name === "ingresos" ? t("finanzas.ingresos") : t("finanzas.gastos")]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
                 <Area type="monotone" dataKey="ingresos" stroke="#18181b" strokeWidth={2} fill="url(#colorIngresos)" />
                 <Area type="monotone" dataKey="gastos" stroke="#ef4444" strokeWidth={2} fill="url(#colorGastos)" />
               </AreaChart>
@@ -232,19 +235,19 @@ export default function FinanzasPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold">Ingresos últimos 7 días</CardTitle>
+            <CardTitle className="text-base font-bold">{t("finanzas.ingresos7dias")}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">{t("finanzas.cargando")}</div>
             ) : dataSemana.every(d => d.ingresos === 0) ? (
-              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">Aún no hay ingresos esta semana</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("finanzas.sinIngresosSemana")}</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={dataSemana} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <XAxis dataKey="dia" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(value) => [`$${value}`, "Ingresos"]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
+                  <Tooltip formatter={(value) => [`$${value}`, t("finanzas.ingresos")]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
                   <Bar dataKey="ingresos" fill="#09090b" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -254,13 +257,13 @@ export default function FinanzasPage() {
 
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold">Servicios más pedidos</CardTitle>
+            <CardTitle className="text-base font-bold">{t("finanzas.serviciosMasPedidos")}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm animate-pulse">{t("finanzas.cargando")}</div>
             ) : dataServicios.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">Aún no hay turnos en este período</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("finanzas.sinTurnosPeriodo")}</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
@@ -269,7 +272,7 @@ export default function FinanzasPage() {
                       <Cell key={index} fill={COLORES[index % COLORES.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name) => [value + " turnos", name]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
+                  <Tooltip formatter={(value, name) => [`${value} ${value === 1 ? t("finanzas.turno") : t("finanzas.turnos")}`, name]} contentStyle={{ borderRadius: "8px", fontSize: "13px" }} />
                   <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: "12px" }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -280,9 +283,9 @@ export default function FinanzasPage() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base font-bold">Gastos del período</CardTitle>
+          <CardTitle className="text-base font-bold">{t("finanzas.gastosPeriodo")}</CardTitle>
           <Button size="sm" className="font-bold bg-zinc-950 text-white hover:bg-zinc-800 h-9 px-4" onClick={() => setMostrarFormGasto(!mostrarFormGasto)}>
-            {mostrarFormGasto ? "Cancelar" : "+ Agregar"}
+            {mostrarFormGasto ? t("finanzas.cancelar") : t("finanzas.agregar")}
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -290,34 +293,34 @@ export default function FinanzasPage() {
             <form onSubmit={agregarGasto} className="p-4 bg-muted/20 rounded-xl border border-border/50 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Descripción</Label>
-                  <Input required placeholder="Descripción" className="h-11" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+                  <Label>{t("finanzas.descripcion")}</Label>
+                  <Input required placeholder={t("finanzas.descripcion")} className="h-11" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Monto ($)</Label>
-                  <Input required type="number" min="0" step="any" placeholder="Monto" className="h-11" value={monto} onChange={(e) => setMonto(e.target.value)} />
+                  <Label>{t("finanzas.monto")}</Label>
+                  <Input required type="number" min="0" step="any" placeholder="0" className="h-11" value={monto} onChange={(e) => setMonto(e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Categoría</Label>
+                  <Label>{t("finanzas.categoria")}</Label>
                   <select className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
                     {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Fecha</Label>
+                  <Label>{t("finanzas.fecha")}</Label>
                   <Input type="date" className="h-11" value={fechaGasto} onChange={(e) => setFechaGasto(e.target.value)} />
                 </div>
               </div>
               <Button type="submit" className="w-full font-bold h-11" disabled={guardandoGasto}>
-                {guardandoGasto ? "Guardando..." : "Guardar gasto"}
+                {guardandoGasto ? t("finanzas.guardando") : t("finanzas.guardarGasto")}
               </Button>
             </form>
           )}
 
           {gastos.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay gastos en este período.</div>
+            <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("finanzas.sinGastos")}</div>
           ) : (
             <div className="space-y-2">
               {gastos.map((g) => (
@@ -341,20 +344,20 @@ export default function FinanzasPage() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-bold">Servicios más rentables</CardTitle>
+          <CardTitle className="text-base font-bold">{t("finanzas.serviciosRentables")}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="h-40 flex items-center justify-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+            <div className="h-40 flex items-center justify-center text-muted-foreground text-sm animate-pulse">{t("finanzas.cargando")}</div>
           ) : dataServicios.length === 0 ? (
-            <div className="h-40 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">No hay datos en este período</div>
+            <div className="h-40 flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">{t("finanzas.sinDatos")}</div>
           ) : (
             <div className="space-y-2">
               {dataServicios.map((svc, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/40">
                   <div>
                     <p className="font-bold text-sm">{svc.name}</p>
-                    <p className="text-xs text-muted-foreground">{svc.turnos} {svc.turnos === 1 ? "turno" : "turnos"}</p>
+                    <p className="text-xs text-muted-foreground">{svc.turnos} {svc.turnos === 1 ? t("finanzas.turno") : t("finanzas.turnos")}</p>
                   </div>
                   <p className="font-light text-base">${svc.ingresos}</p>
                 </div>
