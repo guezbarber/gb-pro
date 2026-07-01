@@ -10,6 +10,7 @@ import {
   Settings, CreditCard, Link2, LogOut, Menu, X
 } from "lucide-react";
 import { useIdioma } from "@/hooks/useIdioma";
+import { IdiomaProvider } from "@/lib/IdiomaContext";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -22,6 +23,14 @@ const BANDERAS = { es: "🇪🇸", en: "🇺🇸", pt: "🇧🇷" };
 const NOMBRES_IDIOMA = { es: "ES", en: "EN", pt: "PT" };
 
 export default function DashboardLayout({ children }) {
+  return (
+    <IdiomaProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </IdiomaProvider>
+  );
+}
+
+function DashboardLayoutContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [barberId, setBarberId] = useState(null);
