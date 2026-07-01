@@ -7,37 +7,59 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Builds an OAuth2 client with the stored tokens and wires up auto-persist on refresh.
-// expiry_date lets googleapis know to refresh proactively instead of waiting for a 401.
-const getOAuthClient = (tokens, barber_id) => {
+// Refreshes the access_token if it expires within 5 minutes.
+// Throws with reconectar=true if the refresh_token was revoked by the user.
+const refreshTokenIfNeeded = async (tokens, barber_id) => {
+  const expiresAt = tokens.expires_at ? new Date(tokens.expires_at).getTime() : 0;
+  const fiveMinutes = 5 * 60 * 1000;
+
+  if (Date.now() + fiveMinutes < expiresAt) return tokens;
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      refresh_token: tokens.refresh_token,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  const data = await res.json();
+
+  if (data.error) {
+    // Token revoked by the user — clean up so the UI shows "reconnect"
+    await supabase.from("google_calendar_tokens").delete().eq("barber_id", barber_id);
+    const err = new Error("Google Calendar desconectado. Vuelve a conectar tu cuenta.");
+    err.reconectar = true;
+    throw err;
+  }
+
+  const updated = {
+    ...tokens,
+    access_token: data.access_token,
+    expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+  };
+
+  await supabase
+    .from("google_calendar_tokens")
+    .update({ access_token: updated.access_token, expires_at: updated.expires_at })
+    .eq("barber_id", barber_id);
+
+  return updated;
+};
+
+const getOAuthClient = (tokens) => {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
   );
-
   oauth2Client.setCredentials({
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
-    expiry_date: tokens.expires_at ? new Date(tokens.expires_at).getTime() : undefined,
   });
-
-  // Fired by googleapis whenever it issues a new access token.
-  // Persists the refreshed credentials so the next call doesn't need to refresh again.
-  oauth2Client.on("tokens", async (newTokens) => {
-    const update = { access_token: newTokens.access_token };
-    if (newTokens.expiry_date) {
-      update.expires_at = new Date(newTokens.expiry_date).toISOString();
-    }
-    if (newTokens.refresh_token) {
-      update.refresh_token = newTokens.refresh_token;
-    }
-    await supabase
-      .from("google_calendar_tokens")
-      .update(update)
-      .eq("barber_id", barber_id);
-  });
-
   return oauth2Client;
 };
 
@@ -56,14 +78,15 @@ export async function POST(request) {
       return NextResponse.json({ error: "Google Calendar no conectado" }, { status: 400 });
     }
 
-    const oauth2Client = getOAuthClient(tokens, barber_id);
+    const freshTokens = await refreshTokenIfNeeded(tokens, barber_id);
+    const oauth2Client = getOAuthClient(freshTokens);
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     const inicio = new Date(start_time);
     const fin = new Date(inicio.getTime() + (duration_minutes || 30) * 60000);
 
     const evento = await calendar.events.insert({
-      calendarId: tokens.calendar_id || "primary",
+      calendarId: freshTokens.calendar_id || "primary",
       requestBody: {
         summary: `${servicio} — ${client_name}`,
         description: `Turno agendado via GBPro\nCliente: ${client_name}\nServicio: ${servicio}`,
@@ -87,6 +110,9 @@ export async function POST(request) {
     return NextResponse.json({ success: true, eventId: evento.data.id });
 
   } catch (err) {
+    if (err.reconectar) {
+      return NextResponse.json({ error: err.message, reconectar: true }, { status: 401 });
+    }
     console.error("Error creando evento:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -117,11 +143,12 @@ export async function DELETE(request) {
       return NextResponse.json({ success: true, mensaje: "No había evento en Calendar" });
     }
 
-    const oauth2Client = getOAuthClient(tokens, barber_id);
+    const freshTokens = await refreshTokenIfNeeded(tokens, barber_id);
+    const oauth2Client = getOAuthClient(freshTokens);
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     await calendar.events.delete({
-      calendarId: tokens.calendar_id || "primary",
+      calendarId: freshTokens.calendar_id || "primary",
       eventId: appt.google_event_id,
     });
 
@@ -133,6 +160,9 @@ export async function DELETE(request) {
     return NextResponse.json({ success: true });
 
   } catch (err) {
+    if (err.reconectar) {
+      return NextResponse.json({ error: err.message, reconectar: true }, { status: 401 });
+    }
     console.error("Error borrando evento:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
